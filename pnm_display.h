@@ -6,8 +6,6 @@ extern "C"
 {
 #endif
 
-  extern int frameNumber;
-  extern float redgreenblue[3];
   extern float background[3];
 
   int pnm_init_display(void);

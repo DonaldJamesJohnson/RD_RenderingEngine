@@ -32,6 +32,18 @@ public:
 
   int rd_render_cleanup(void);
 
+  int rd_background(const float color[]);
+
+  int rd_color(const float color[]);
+
+  int rd_point(const float p[3]);
+
+  int rd_line(const float start[3], const float end[3]);
+
+  int rd_circle(const float center[3], float radius);
+
+  int rd_fill(const float seed_point[3]);
+
 };
 
 #endif /* RD_ENGINE_DIRECT_H */

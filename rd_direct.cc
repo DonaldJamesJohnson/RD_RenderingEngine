@@ -3,7 +3,7 @@
 #include "rd_display.h"
 
 int frameNumber;
-float redgreenblue[3] = {255.0, 255.0, 255.0};
+float redgreenblue[3] = {1.0, 1.0, 1.0};
 float background[3] = {0.0, 0.0, 0.0};
 
 int REDirect::rd_display(const string & name, const string & type, const string & mode)
@@ -49,7 +49,7 @@ int REDirect::rd_render_cleanup(void)
     return RD_OK;
 }
 
-int rd_color(const float color[])
+int REDirect::rd_color(const float color[])
 {
     redgreenblue[0] = color[0];
     redgreenblue[1] = color[1];
@@ -57,17 +57,17 @@ int rd_color(const float color[])
     return RD_OK;
 }
 
-int rd_background(const float color[])
+int REDirect::rd_background(const float color[])
 {
     return rd_set_background(color);
 }
 
-int rd_point(const float p[3])
+int REDirect::rd_point(const float p[3])
 {
     return rd_write_pixel(p[0], p[1], redgreenblue);
 }
 
-int rd_line(const float start[3], const float end[3])
+int REDirect::rd_line(const float start[3], const float end[3])
 {
     float xs = start[0];
     float ys = start[1];
@@ -83,7 +83,7 @@ int rd_line(const float start[3], const float end[3])
         plot[0] = x;
         plot[1] = y;
         plot[2] = zs;
-        rd_point(plot);
+        rd_write_pixel(plot[0], plot[1], redgreenblue);
         if (p > 0)
         {
             p += (2 * (ye - ys)) - (2 * (xe - xs));
@@ -94,7 +94,7 @@ int rd_line(const float start[3], const float end[3])
     return RD_OK;
 }
 
-int rd_circle(const float center[3], float radius)
+int REDirect::rd_circle(const float center[3], float radius)
 {
     float x = center[0];
     float y = radius;
@@ -104,7 +104,7 @@ int rd_circle(const float center[3], float radius)
         plot[0] = x;
         plot[1] = y; 
         plot[2] = center[2];
-        rd_point(plot);
+        rd_write_pixel(plot[0], plot[1], redgreenblue);
         x++;
         if (p > 0)
         {
@@ -120,19 +120,22 @@ int rd_circle(const float center[3], float radius)
     return RD_OK;
 }
 
-int rd_fill(const float seed_point[3])
+int REDirect::rd_fill(const float seed_point[3]) //xyz 
 {
+    // use find span to determine xs and xe
+    // look at seed point color and set seed_color to that
+    int seed_color;
     float xs = seed_point[0];
     float xe = seed_point[1];
     float y = seed_point[2]; 
     float start[3] = {xs, y, 0};
     float end[3] = {xe, y, 0};
-    rd_line(start, end);
+    REDirect::rd_line(start, end);
     int new_xs;
     int new_xe;
     for (new_xs = new_xe = xs; new_xe < xe; new_xs = new_xe)
     {
-        //findSpan?
+        
     }
     return RD_OK;
 }
