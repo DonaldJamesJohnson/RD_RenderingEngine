@@ -2,6 +2,10 @@
 #include "rd_error.h"
 #include "rd_display.h"
 
+int frameNumber;
+float redgreenblue[3] = {255.0, 255.0, 255.0};
+float background[3] = {0.0, 0.0, 0.0};
+
 int REDirect::rd_display(const string & name, const string & type, const string & mode)
 {
     return RD_OK;
@@ -14,12 +18,12 @@ int REDirect::rd_format(int xresolution, int yresolution)
 
 int REDirect::rd_world_begin(void)
 {
-    //Perform function call on function pointer
+    rd_disp_init_frame(frameNumber);
     return RD_OK;
 }
 int REDirect::rd_world_end(void)
 {
-    //Perform function call on function pointer
+    rd_disp_end_frame();
     return RD_OK;
 }
 
@@ -31,7 +35,7 @@ int REDirect::rd_frame_begin(int frame_no)
 
 int REDirect::rd_frame_end(void)
 {
-    //Perform function call on function pointer
+    rd_disp_end_frame();
     return RD_OK;
 }
 
@@ -55,16 +59,12 @@ int rd_color(const float color[])
 
 int rd_background(const float color[])
 {
-    background[0] = color[0];
-    background[1] = color[1];
-    background[2] = color[2];
-    return RD_OK;
+    return rd_set_background(color);
 }
 
 int rd_point(const float p[3])
 {
-    pnm_write_pixel(p[0], p[1], redgreenblue);
-    return RD_OK;
+    return rd_write_pixel(p[0], p[1], redgreenblue);
 }
 
 int rd_line(const float start[3], const float end[3])
