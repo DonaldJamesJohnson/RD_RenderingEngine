@@ -2,9 +2,6 @@
 #include "rd_error.h"
 #include "rd_display.h"
 
-static float rgb[3] = {255.0, 255.0, 255.0};
-static float background[3] = {0.0, 0.0, 0.0};
-
 int REDirect::rd_display(const string & name, const string & type, const string & mode)
 {
     return RD_OK;
@@ -50,9 +47,9 @@ int REDirect::rd_render_cleanup(void)
 
 int rd_color(const float color[])
 {
-    rgb[0] = color[0];
-    rgb[1] = color[1];
-    rgb[2] = color[2];
+    redgreenblue[0] = color[0];
+    redgreenblue[1] = color[1];
+    redgreenblue[2] = color[2];
     return RD_OK;
 }
 
@@ -66,7 +63,7 @@ int rd_background(const float color[])
 
 int rd_point(const float p[3])
 {
-    pnm_write_pixel(p[0], p[1], rgb);
+    pnm_write_pixel(p[0], p[1], redgreenblue);
     return RD_OK;
 }
 

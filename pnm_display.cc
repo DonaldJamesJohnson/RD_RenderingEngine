@@ -4,7 +4,7 @@
 #include "algorithm"
 using std::fill;
 
-//static int image[10000][10000];
+//static int image[10000][10000]; // What type of data structure is the image?
 static int* imagex;
 static int* imagey;
 
@@ -45,6 +45,9 @@ int pnm_read_pixel(int x, int y, float rgb [])
 
 int pnm_set_background(const float rgb [])
 {
+    background[0] = rgb[0];
+    background[1] = rgb[1];
+    background[2] = rgb[2];
     return RD_OK;
 }
 

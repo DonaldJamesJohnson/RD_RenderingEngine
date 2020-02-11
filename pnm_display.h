@@ -7,6 +7,8 @@ extern "C"
 #endif
 
   static int frameNumber;
+  static float redgreenblue[3] = {255.0, 255.0, 255.0};
+  static float background[3] = {0.0, 0.0, 0.0};
 
   int pnm_init_display(void);
 
