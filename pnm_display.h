@@ -6,6 +6,8 @@ extern "C"
 {
 #endif
 
+  static int frameNumber;
+
   int pnm_init_display(void);
 
   int pnm_end_display(void);
