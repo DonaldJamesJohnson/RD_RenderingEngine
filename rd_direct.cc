@@ -17,21 +17,24 @@ int REDirect::rd_format(int xresolution, int yresolution)
 
 int REDirect::rd_world_begin(void)
 {
+    //Perform function call on function pointer
     return RD_OK;
 }
 int REDirect::rd_world_end(void)
 {
+    //Perform function call on function pointer
     return RD_OK;
 }
 
 int REDirect::rd_frame_begin(int frame_no)
 {
-    frameNumber = frameNumber;
+    frameNumber = frame_no;
     return RD_OK;
 }
 
 int REDirect::rd_frame_end(void)
 {
+    //Perform function call on function pointer
     return RD_OK;
 }
 
