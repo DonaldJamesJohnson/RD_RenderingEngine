@@ -40,6 +40,8 @@ public:
 
   int rd_line(const float start[3], const float end[3]);
 
+  void line(float xs, float xe, float ys, float ye, int mod);
+
   int rd_circle(const float center[3], float radius);
 
   int rd_fill(const float seed_point[3]);

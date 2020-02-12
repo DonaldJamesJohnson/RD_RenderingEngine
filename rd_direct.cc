@@ -1,6 +1,7 @@
 #include "rd_direct.h"
 #include "rd_error.h"
 #include "rd_display.h"
+#include "iostream"
 
 int frameNumber;
 float redgreenblue[3] = {1.0, 1.0, 1.0};
@@ -69,28 +70,79 @@ int REDirect::rd_point(const float p[3])
 
 int REDirect::rd_line(const float start[3], const float end[3])
 {
-    float xs = start[0];
-    float ys = start[1];
-    float zs = start[2];
-    float xe = end[0];
-    float ye = end[1];
-    float ze = end[2];
-    float y = ys;
-    float p = (2 * (ye - ys)) - (xe - xs);
-    float plot[3];
-    for (int x = xs; x <= xe; x++)
+    float xs;
+    float ys;
+    float xe;
+    float ye;
+    int mod = 1;
+    std::cout << "--------------------------------" << std::endl;
+    std::cout << "start[0]: " << start[0] << " | end[0]: " << end[0]<< std::endl;
+    std::cout << "start[1]: " << start[1] << " | end[1]: " << end[1] << std::endl;
+    if (start[0] < end[0] && start[1] == end[1]) 
     {
-        plot[0] = x;
-        plot[1] = y;
-        plot[2] = zs;
-        rd_write_pixel(plot[0], plot[1], redgreenblue);
-        if (p > 0)
-        {
-            p += (2 * (ye - ys)) - (2 * (xe - xs));
-            y++;
-        }
-        else p += 2 * (ye - ys);
+        xs = start[0];
+        xe = end[0];
+        ys = start[1];
+        ye = end[1];
+        mod = -1;
     }
+    else if (start[0] < end[0] && start[1] > end[1])
+    {
+        xs = start[0];
+        xe = end[0];
+        ys = start[1];
+        ye = end[1];
+        mod = -1;
+    }
+    else if (start[0] == end[0] && start[1] > end[1])
+    {
+        xs = start[0];
+        xe = end[0];
+        ys = start[1];
+        ye = end[1];
+        mod = -1;
+    }
+    else if (start[0] > end[0] && start[1] > end[1])
+    {
+        xs = end[0];
+        xe = start[0];
+        ys = end[1];
+        ye = start[1];
+        mod = 1;   
+    }
+    else if (start[0] > end[0] && start[1] == end[1])
+    {
+        xs = end[0];
+        xe = start[0];
+        ys = end[1];
+        ye = start[1];
+        mod = 1; 
+    }
+    else if (start[0] > end[0] && start[1] < end[1])
+    {
+        xs = end[0];
+        xe = start[0];
+        ys = end[1];
+        ye = start[1];
+        mod = -1; 
+    }
+    else if (start[0] == end[0] && start[1] > end[1])
+    {
+        xs = start[0];
+        xe = end[0];
+        ys = start[1];
+        ye = end[1];
+        mod = 1;
+    }
+    else if (start[0] < end[0] && start[1] < end[1])
+    {
+        xs = start[0];
+        xe = end[0];
+        ys = start[1];
+        ye = end[1];
+        mod = 1;
+    }
+    line(xs, xe, ys, ye, mod);
     return RD_OK;
 }
 
@@ -98,7 +150,7 @@ int REDirect::rd_circle(const float center[3], float radius)
 {
     float x = center[0];
     float y = radius;
-    float p = ((x + 1) * (x + 1)) + ((y - .5) * (y - .5)) - ((radius) * (radius));
+    float p = ((x) * (x)) + ((y - .5) * (y - .5)) - ((radius) * (radius));
     float plot[3];
     while (x <= y){
         plot[0] = x;
@@ -138,4 +190,73 @@ int REDirect::rd_fill(const float seed_point[3]) //xyz
         
     }
     return RD_OK;
+}
+
+void REDirect::line(float xs, float xe, float ys, float ye, int mod)
+{
+    float x;
+    float y;
+    float dx;
+    float dy;
+    if (xs < xe) dx = xe - xs;
+    else dx = xs - xe;
+    if (ys < ye) dy = ye - ys;
+    else dy = ys - ye;
+    float p;
+    if (dy < dx) p = (2 * (dy)) - (dx);
+    else p = (2 * (dx)) - (dy);
+    float plot[3];
+    std::cout << "-----------------------------------------" << std::endl;
+    std::cout << "p = " << p << std::endl;
+    std::cout << "xs: " << xs << "| xe: " << xe << "| dx: " << dx << std::endl;
+    std::cout << "ys: " << ys << "| ye: " << ye << "| dy: " << dy << std::endl;
+    if (dx >= dy){
+        y = ys;
+        for (x = xs; x <= xe; x++)
+        {
+            plot[0] = x;
+            plot[1] = y;
+            rd_write_pixel(plot[0], plot[1], redgreenblue);
+            if (p > 0)
+            {
+                p += (2 * dy) - (2 * dx);
+                y += mod;
+                std::cout << "x: " << x;
+                std::cout << "| y: " << y;
+                std::cout << "| p: " << p << std::endl;
+            }
+            else 
+            {
+                p += (2 * dy);
+                std::cout << "x: " << x;
+                std::cout << "| y: " << y;
+                std::cout << "| p: " << p << std::endl;
+            }
+        }
+    }
+    else if (dx < dy)
+    {
+        x = xs;
+        for (y = ys; y <= ye; y++)
+        {
+            plot[0] = x;
+            plot[1] = y;
+            rd_write_pixel(plot[0], plot[1], redgreenblue);
+            if (p > 0)
+            {
+                p += (2 * dx) - (2 * dy);
+                x += mod;
+                std::cout << "x: " << x;
+                std::cout << "| y: " << y;
+                std::cout << "| p: " << p << std::endl;
+            }
+            else 
+            {
+                p += (2 * dx);
+                std::cout << "x: " << x;
+                std::cout << "| y: " << y;
+                std::cout << "| p: " << p << std::endl;
+            }
+        }
+    }
 }
