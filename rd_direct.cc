@@ -84,19 +84,10 @@ int REDirect::rd_fill(const float seed_point[3]) //xyz
 {
     // use find span to determine xs and xe
     // look at seed point color and set seed_color to that
-    int seed_color;
-    float xs = seed_point[0];
-    float xe = seed_point[1];
-    float y = seed_point[2]; 
-    float start[3] = {xs, y, 0};
-    float end[3] = {xe, y, 0};
-    REDirect::rd_line(start, end);
-    int new_xs;
-    int new_xe;
-    for (new_xs = new_xe = xs; new_xe < xe; new_xs = new_xe)
-    {
-        
-    }
+    float seed_color[3];
+    rd_read_pixel(seed_point[0], seed_point[1], seed_color);
+    
+    fill(seed_point[0], seed_point[1], seed_color, redgreenblue);
     return RD_OK;
 }
 
@@ -341,5 +332,22 @@ void REDirect::circle(const float center[3], const float radius)
         rd_write_pixel(center[0]-y, center[1]+x, redgreenblue);
         rd_write_pixel(center[0]+y, center[1]-x, redgreenblue);
         rd_write_pixel(center[0]-y, center[1]-x, redgreenblue);
+    }
+}
+
+void REDirect::fill(int x, int y, float seed_color[3], float new_color[3])
+{
+    float check_color[3];
+    rd_read_pixel(x, y, check_color);
+    std::cout << "seed_color: " << seed_color[0] << ", " << seed_color[1] << ", " << seed_color[2] << std::endl;
+    std::cout << "rgb: " << redgreenblue[0] << ", " << redgreenblue[1] << ", " << redgreenblue[2] << std::endl;
+    std::cout << "check_color: " << check_color[0] << ", " << check_color[1] << ", " << check_color[2] << std::endl;
+    if (check_color[0] == seed_color[0] && check_color[1] == seed_color[1] && check_color[2] == seed_color[2])
+    {
+        rd_write_pixel(x, y, redgreenblue);
+        fill(x + 1, y, seed_color, new_color);
+        fill(x - 1, y, seed_color, new_color);
+        fill(x, y + 1, seed_color, new_color);
+        fill(x, y - 1, seed_color, new_color);
     }
 }

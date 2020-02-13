@@ -48,6 +48,8 @@ public:
 
   int rd_fill(const float seed_point[3]);
 
+  void fill(int x, int y, float seed_color[3], float new_color[3]);
+
 };
 
 #endif /* RD_ENGINE_DIRECT_H */
