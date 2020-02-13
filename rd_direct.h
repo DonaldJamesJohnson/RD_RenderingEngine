@@ -44,6 +44,8 @@ public:
 
   int rd_circle(const float center[3], float radius);
 
+  void circle(const float center[3], float radius);
+
   int rd_fill(const float seed_point[3]);
 
 };

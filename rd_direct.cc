@@ -76,27 +76,7 @@ int REDirect::rd_line(const float start[3], const float end[3])
 
 int REDirect::rd_circle(const float center[3], float radius)
 {
-    float x = center[0];
-    float y = radius;
-    float p = ((x) * (x)) + ((y - .5) * (y - .5)) - ((radius) * (radius));
-    float plot[3];
-    while (x <= y){
-        plot[0] = x;
-        plot[1] = y; 
-        plot[2] = center[2];
-        rd_write_pixel(plot[0], plot[1], redgreenblue);
-        x++;
-        if (p > 0)
-        {
-            y--;
-            p += (2 * x) - (2 * y) + 1;
-        }
-        else 
-        {
-            y = y;
-            p += (2 * x) + 1;
-        }
-    }
+    circle(center, radius);
     return RD_OK;
 }
 
@@ -325,5 +305,41 @@ void REDirect::line(const float start[3], const float end[3])
                 p += (2 * dy);
             }
         }
+    }
+}
+
+void REDirect::circle(const float center[3], const float radius)
+{
+    float x = 0;
+    float y = radius;
+    float p = 3 - 2 * radius;
+    rd_write_pixel(center[0]+x, center[1]+y, redgreenblue);
+    rd_write_pixel(center[0]-x, center[1]+y, redgreenblue);
+    rd_write_pixel(center[0]+x, center[1]-y, redgreenblue);
+    rd_write_pixel(center[0]-x, center[1]-y, redgreenblue);
+    rd_write_pixel(center[0]+y, center[1]+x, redgreenblue);
+    rd_write_pixel(center[0]-y, center[1]+x, redgreenblue);
+    rd_write_pixel(center[0]+y, center[1]-x, redgreenblue);
+    rd_write_pixel(center[0]-y, center[1]-x, redgreenblue);
+    while (x <= y){
+        if (p > 0)
+        {
+            p += 4 * (x - y) + 10;
+            x++;
+            y--;
+        }
+        else 
+        {
+            p += 4 * x + 6;
+            x++;
+        }
+        rd_write_pixel(center[0]+x, center[1]+y, redgreenblue);
+        rd_write_pixel(center[0]-x, center[1]+y, redgreenblue);
+        rd_write_pixel(center[0]+x, center[1]-y, redgreenblue);
+        rd_write_pixel(center[0]-x, center[1]-y, redgreenblue);
+        rd_write_pixel(center[0]+y, center[1]+x, redgreenblue);
+        rd_write_pixel(center[0]-y, center[1]+x, redgreenblue);
+        rd_write_pixel(center[0]+y, center[1]-x, redgreenblue);
+        rd_write_pixel(center[0]-y, center[1]-x, redgreenblue);
     }
 }
