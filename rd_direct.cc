@@ -70,9 +70,6 @@ int REDirect::rd_point(const float p[3])
 
 int REDirect::rd_line(const float start[3], const float end[3])
 {
-    std::cout << "--------------------------------" << std::endl;
-    std::cout << "start[0]: " << start[0] << " | end[0]: " << end[0]<< std::endl;
-    std::cout << "start[1]: " << start[1] << " | end[1]: " << end[1] << std::endl;
     line(start, end);
     return RD_OK;
 }
@@ -144,13 +141,9 @@ void REDirect::line(const float start[3], const float end[3])
     // Set p based on whether delta x or y is greater
     if (dy < dx) p = (2 * (dy)) - (dx);
     else p = (2 * (dx)) - (dy);
-    std::cout << "-----------------------------------------" << std::endl;
-    std::cout << "dx: " << dx << " | dy: " << dy << std::endl;
-    std::cout << "p = " << p << std::endl;
 
     if (start[0] < end[0] && start[1] <= end[1] && dx > dy)        // Case 1
     {
-        std::cout << "Case 1" << std::endl;
         xs = start[0];
         xe = end[0];
         ys = start[1];
@@ -165,22 +158,15 @@ void REDirect::line(const float start[3], const float end[3])
             {
                 p += (2 * dy) - (2 * dx);
                 y++;
-                std::cout << "x: " << x;
-                std::cout << "| y: " << y;
-                std::cout << "| p: " << p << std::endl;
             }
             else 
             {
                 p += (2 * dy);
-                std::cout << "x: " << x;
-                std::cout << "| y: " << y;
-                std::cout << "| p: " << p << std::endl;
             }
         }
     }
     else if (start[0] < end[0] && start[1] < end[1] && dx <= dy)    // Case 2
     {
-        std::cout << "Case 2" << std::endl;
         xs = start[0];
         xe = end[0];
         ys = start[1];
@@ -195,22 +181,15 @@ void REDirect::line(const float start[3], const float end[3])
             {
                 p += (2 * dx) - (2 * dy);
                 x++;
-                std::cout << "x: " << x;
-                std::cout << "| y: " << y;
-                std::cout << "| p: " << p << std::endl;
             }
             else 
             {
                 p += (2 * dx);
-                std::cout << "x: " << x;
-                std::cout << "| y: " << y;
-                std::cout << "| p: " << p << std::endl;
             }
         }
     }
     else if (start[0] >= end[0] && start[1] < end[1] && dx < dy)   // Case 3
     {
-        std::cout << "Case 3" << std::endl;
         xs = start[0];
         xe = end[0];
         ys = start[1];
@@ -225,22 +204,15 @@ void REDirect::line(const float start[3], const float end[3])
             {
                 p += (2 * dx) - (2 * dy);
                 x--;
-                std::cout << "x: " << x;
-                std::cout << "| y: " << y;
-                std::cout << "| p: " << p << std::endl;
             }
             else 
             {
                 p += (2 * dx);
-                std::cout << "x: " << x;
-                std::cout << "| y: " << y;
-                std::cout << "| p: " << p << std::endl;
             }
         }
     }
     else if (start[0] > end[0] && start[1] < end[1] && dx >= dy)    // Case 4
     {
-        std::cout << "Case 4" << std::endl;
         xs = start[0];
         xe = end[0];
         ys = start[1];
@@ -255,22 +227,15 @@ void REDirect::line(const float start[3], const float end[3])
             {
                 p += (2 * dy) - (2 * dx);
                 y--;
-                std::cout << "x: " << x;
-                std::cout << "| y: " << y;
-                std::cout << "| p: " << p << std::endl;
             }
             else 
             {
                 p += (2 * dy);
-                std::cout << "x: " << x;
-                std::cout << "| y: " << y;
-                std::cout << "| p: " << p << std::endl;
             }
         }
     }
     else if (start[0] > end[0] && start[1] >= end[1] && dx > dy)   // Case 5
     {
-        std::cout << "Case 5" << std::endl;
         xs = start[0];
         xe = end[0];
         ys = start[1];
@@ -284,30 +249,81 @@ void REDirect::line(const float start[3], const float end[3])
             if (p >= 0)
             {
                 p += (2 * dy) - (2 * dx);
-                y--;
-                std::cout << "x: " << x;
-                std::cout << "| y: " << y;
-                std::cout << "| p: " << p << std::endl;
+                y++;
             }
             else 
             {
                 p += (2 * dy);
-                std::cout << "x: " << x;
-                std::cout << "| y: " << y;
-                std::cout << "| p: " << p << std::endl;
             }
         }
     }
     else if (start[0] > end[0] && start[1] > end[1] && dx <= dy)    // Case 6
     {
-
+        xs = start[0];
+        xe = end[0];
+        ys = start[1];
+        ye = end[1];
+        x = xe;
+        for (y = ye; y <= ys; y++)
+        {
+            plot[0] = x;
+            plot[1] = y;
+            rd_write_pixel(plot[0], plot[1], redgreenblue);
+            if (p > 0)
+            {
+                p += (2 * dx) - (2 * dy);
+                x++;
+            }
+            else 
+            {
+                p += (2 * dx);
+            }
+        }
     }
     else if (start[0] <= end[0] && start[1] > end[1] && dx < dy)   // Case 7
     {
-        std::cout << "Case 7" << std::endl;
+        xs = start[0];
+        xe = end[0];
+        ys = start[1];
+        ye = end[1];
+        x = xe;
+        for (y = ye; y <= ys; y++)
+        {
+            plot[0] = x;
+            plot[1] = y;
+            rd_write_pixel(plot[0], plot[1], redgreenblue);
+            if (p > 0)
+            {
+                p += (2 * dx) - (2 * dy);
+                x--;
+            }
+            else 
+            {
+                p += (2 * dx);
+            }
+        }
     }
     else if (start[0] < end[0] && start[1] > end[1] && dx >= dy)    // Case 8
     {
-
+        xs = start[0];
+        xe = end[0];
+        ys = start[1];
+        ye = end[1];
+        y = ys;
+        for (x = xs; x <= xe; x++)
+        {
+            plot[0] = x;
+            plot[1] = y;
+            rd_write_pixel(plot[0], plot[1], redgreenblue);
+            if (p >= 0)
+            {
+                p += (2 * dy) - (2 * dx);
+                y--;
+            }
+            else 
+            {
+                p += (2 * dy);
+            }
+        }
     }
 }
