@@ -70,6 +70,7 @@ int REDirect::rd_point(const float p[3])
 
 int REDirect::rd_line(const float start[3], const float end[3])
 {
+    std::cout << "Calling line function" << std::endl;
     line(start, end);
     return RD_OK;
 }
@@ -86,8 +87,17 @@ int REDirect::rd_fill(const float seed_point[3]) //xyz
     // look at seed point color and set seed_color to that
     float seed_color[3];
     rd_read_pixel(seed_point[0], seed_point[1], seed_color);
-    
-    fill(seed_point[0], seed_point[1], seed_color, redgreenblue);
+    int x = seed_point[0];
+    int y = seed_point[1];
+    fill(x, y, seed_color, redgreenblue);
+    /*
+    int xs = seed_point[0];
+    int xe = xs+1;
+    int y = seed_point[1];
+    //findSpan(xs, xe, y, seed_color);
+    //std::cout << "xs: " << xs << " | xe: " << xe << std::endl;
+    fill(xs, xe, y, seed_color);
+    */
     return RD_OK;
 }
 
@@ -301,6 +311,7 @@ void REDirect::line(const float start[3], const float end[3])
 
 void REDirect::circle(const float center[3], const float radius)
 {
+    
     float x = 0;
     float y = radius;
     float p = 3 - 2 * radius;
@@ -333,21 +344,65 @@ void REDirect::circle(const float center[3], const float radius)
         rd_write_pixel(center[0]+y, center[1]-x, redgreenblue);
         rd_write_pixel(center[0]-y, center[1]-x, redgreenblue);
     }
+    
 }
 
 void REDirect::fill(int x, int y, float seed_color[3], float new_color[3])
-{
+{   
     float check_color[3];
     rd_read_pixel(x, y, check_color);
-    std::cout << "seed_color: " << seed_color[0] << ", " << seed_color[1] << ", " << seed_color[2] << std::endl;
-    std::cout << "rgb: " << redgreenblue[0] << ", " << redgreenblue[1] << ", " << redgreenblue[2] << std::endl;
-    std::cout << "check_color: " << check_color[0] << ", " << check_color[1] << ", " << check_color[2] << std::endl;
     if (check_color[0] == seed_color[0] && check_color[1] == seed_color[1] && check_color[2] == seed_color[2])
     {
         rd_write_pixel(x, y, redgreenblue);
-        fill(x + 1, y, seed_color, new_color);
-        fill(x - 1, y, seed_color, new_color);
-        fill(x, y + 1, seed_color, new_color);
-        fill(x, y - 1, seed_color, new_color);
+        fill(x + 1, y, seed_color, redgreenblue);
+        fill(x - 1, y, seed_color, redgreenblue);
+        fill(x, y + 1, seed_color, redgreenblue);
+        fill(x, y - 1, seed_color, redgreenblue);
     }
 }
+
+/*
+void REDirect::fill(int xs, int xe, int y, float seed_color[3])
+{
+    int new_xs;
+    int new_xe;
+    for (new_xs = new_xe = xs; new_xe < xe; new_xs = new_xe)
+    {
+       // std::cout << "PREFINDLOOP:new_xs: " << new_xs << " | new_xe: " << new_xe << " | y: " << y << std::endl;
+        findSpan(new_xs, new_xe, y, seed_color);
+        fillSpan(xs, xe, y);
+        std::cout << "LOOP:new_xs: " << new_xs << " | new_xe: " << new_xe << " | y: " << y << std::endl;
+        if (new_xs != new_xe) fill(new_xs, new_xe, y++, seed_color);
+        new_xe++;
+    }
+}
+*/
+/*
+int REDirect::findSpan(int& new_xs, int& new_xe, int y, float seed_color[3])
+{
+    float check_color[3];
+    rd_read_pixel(new_xe, y, check_color);
+    while (check_color[0] == seed_color[0] && check_color[1] == seed_color[1] && check_color[2] == seed_color[2])
+    {
+        if (new_xe <= display_xSize) new_xe++;
+        rd_read_pixel(new_xe, y, check_color);
+    }
+    rd_read_pixel(new_xs-1, y, check_color);
+    while (check_color[0] == seed_color[0] && check_color[1] == seed_color[1] && check_color[2] == seed_color[2])
+    {
+        if (new_xs >= 0) new_xs--;
+        rd_read_pixel(new_xs, y, check_color);
+    }
+    std::cout << "FOUND:   xs: " << new_xs << " | xe: " << new_xe << " | y: " << y << std::endl;
+}
+*/
+/*
+void REDirect::fillSpan(int xs, int xe, int y)
+{
+    std::cout << "FILLING: xs: " << xs << " | xe: " << xe << " | y: " << y << std::endl;
+    for (xs; xs < xe; xs++)
+    {
+        rd_write_pixel(xs, y, redgreenblue);
+    }
+}
+*/

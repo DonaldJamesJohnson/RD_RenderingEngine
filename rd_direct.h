@@ -47,9 +47,16 @@ public:
   void circle(const float center[3], float radius);
 
   int rd_fill(const float seed_point[3]);
-
+  
   void fill(int x, int y, float seed_color[3], float new_color[3]);
 
+/*
+  void fill(int xs, int xe, int y, float seed_color[3]);
+
+  int findSpan(int& new_xs, int& new_xe, int y, float seed_color[3]);
+
+  void fillSpan(int xs, int xe, int y);
+*/
 };
 
 #endif /* RD_ENGINE_DIRECT_H */
