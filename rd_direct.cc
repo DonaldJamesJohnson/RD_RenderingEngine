@@ -5,7 +5,6 @@
 
 int frameNumber;
 float redgreenblue[3] = {1.0, 1.0, 1.0};
-float background[3] = {0.0, 0.0, 0.0};
 
 int REDirect::rd_display(const string & name, const string & type, const string & mode)
 {
@@ -70,7 +69,6 @@ int REDirect::rd_point(const float p[3])
 
 int REDirect::rd_line(const float start[3], const float end[3])
 {
-    std::cout << "Calling line function" << std::endl;
     line(start, end);
     return RD_OK;
 }
@@ -354,10 +352,10 @@ void REDirect::fill(int x, int y, float seed_color[3], float new_color[3])
     if (check_color[0] == seed_color[0] && check_color[1] == seed_color[1] && check_color[2] == seed_color[2])
     {
         rd_write_pixel(x, y, redgreenblue);
-        fill(x + 1, y, seed_color, redgreenblue);
-        fill(x - 1, y, seed_color, redgreenblue);
-        fill(x, y + 1, seed_color, redgreenblue);
-        fill(x, y - 1, seed_color, redgreenblue);
+        if (x < display_xSize - 1) fill(x + 1, y, seed_color, redgreenblue);
+        if (x > 0) fill(x - 1, y, seed_color, redgreenblue);
+        if (y < display_ySize - 1) fill(x, y + 1, seed_color, redgreenblue);
+        if (y > 0) fill(x, y - 1, seed_color, redgreenblue);
     }
 }
 

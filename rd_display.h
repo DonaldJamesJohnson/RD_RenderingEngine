@@ -7,7 +7,7 @@ using std::string;
 /* Global values set automatically */
 
 extern int display_xSize, display_ySize;
-
+extern int frameNumber;
 extern const char * display_name;
 
 /************************************************************************/
