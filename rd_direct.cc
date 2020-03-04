@@ -2,19 +2,17 @@
 #include "rd_error.h"
 #include "rd_display.h"
 #include "iostream"
+#include "Vector3D.h"
 
 typedef double Point[3];
 typedef double Pointh[4];
-typedef double Vector[3];
 typedef double XFORM[4][4];
 
 int frameNumber;
 float redgreenblue[3] = {1.0, 1.0, 1.0};
 Point point;
 Pointh pointh;
-Vector vector;
 XFORM Xform;
-
 
 int REDirect::rd_display(const string & name, const string & type, const string & mode)
 {
@@ -429,44 +427,9 @@ void multiply(Point& r, Point p, float scalar)
     r[2] = scalar * p[2];
 }
 
-void multiply(Vector& r, float scalar, Vector v)
-{
-    r[0] = scalar * v[0];
-    r[1] = scalar * v[1];
-    r[2] = scalar * v[2];
-}
-
-void multiply(Vector& r, Vector v, float scalar)
-{
-    r[0] = scalar * v[0];
-    r[1] = scalar * v[1];
-    r[2] = scalar * v[2];
-}
-
 void copy(Point& dest, Point src)
 {
     dest[0] = src[0];
     dest[1] = src[1];
     dest[2] = src[2];
-}
-
-void copy(Vector& dest, Vector src)
-{
-    dest[0] = src[0];
-    dest[1] = src[1];
-    dest[2] = src[2];
-}
-
-void dot(float& r, Vector v1, Vector v2)
-{
-    r += v1[0] * v2[0];
-    r += v1[1] * v2[1];
-    r += v1[2] * v2[2];
-}
-
-void cross(Vector& r, Vector v1, Vector v2)
-{
-    r[0] = (v1[1] * v2[2]) - (v2[1] * v1[2]);
-    r[1] = ((v1[0] * v2[2]) - (v2[0] * v1[2])) * -1;
-    r[2] = (v1[0] * v2[1]) - (v2[0] * v1[1]); 
 }
