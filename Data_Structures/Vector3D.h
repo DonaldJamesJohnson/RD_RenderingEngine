@@ -66,6 +66,32 @@ struct Vector3D
         z = v.z;
         return (*this);
     }
+
+    double Magnitude()
+    {
+        Vector3D v = *this;
+        return (sqrt(v.x * v.x + v.y * v.y + v.z * v.z));
+    }   
+
+    Vector3D Normalize()
+    {
+        Vector3D v = *this;
+        return (v / v.Magnitude());
+    }
+
+    double Dot(const  Vector3D& b)
+    {
+        Vector3D a = *this;
+        return (a.x * b.x + a.y * b.y + a.z * b.z);
+    }
+
+    Vector3D Cross(const Vector3D& b)
+    {
+        Vector3D a = *this;
+        return (Vector3D(a.y * b.z - a.z * b.y,
+                        a.z * b.x - a.x * b.z,
+                        a.x * b.y - a.y * b.x));
+    }
 };
 
 inline Vector3D operator +(const Vector3D& a, const Vector3D& b)
@@ -92,28 +118,6 @@ inline Vector3D operator /(const Vector3D& v, double s)
 inline Vector3D operator -(const Vector3D& v)
 {
     return (Vector3D(-v.x, -v.y, -v.z));
-}
-
-inline double Magnitude(const Vector3D& v)
-{
-    return (sqrt(v.x * v.x + v.y * v.y + v.z * v.z));
-}
-
-inline Vector3D Normalize(const Vector3D& v)
-{
-    return (v / Magnitude(v));
-}
-
-inline double Dot(const Vector3D& a, const  Vector3D& b)
-{
-    return (a.x * b.x + a.y * b.y + a.z * b.z);
-}
-
-inline Vector3D Cross(const Vector3D& a, const Vector3D& b)
-{
-    return (Vector3D(a.y * b.z - a.z * b.y,
-                     a.z * b.x - a.x * b.z,
-                     a.x * b.y - a.y * b.x));
 }
 
 #endif /*__VECTOR3D_H__*/

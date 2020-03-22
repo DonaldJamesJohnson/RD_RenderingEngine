@@ -1,6 +1,8 @@
 #ifndef __POINT_H__
 #define __POINT_H__
 
+#include "Data_Structures/Vector3D.h"
+
 struct Point
 {
     double x, y, z;
@@ -63,6 +65,11 @@ struct Point
         y = p.y;
         z = p.z;
         return (*this);
+    }
+
+    Vector3D to_vector()
+    {
+        return (Vector3D(x, y, z));
     }
 };
 

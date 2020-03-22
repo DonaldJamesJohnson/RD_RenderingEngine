@@ -1,3 +1,6 @@
+#ifndef __MATRIX4D_H__
+#define __MATRIX4D_H__
+
 #include "Data_Structures/Vector3D.h"
 #include "Data_Structures/Point.h"
 #include "Data_Structures/PointH.h"
@@ -8,6 +11,7 @@ private:
     double n[4][4];
 
 public:
+/**************************** Constructors *****************************/
     Matrix4D() = default;
 
     Matrix4D(double n00, double n01, double n02, double n03,
@@ -29,6 +33,8 @@ public:
         n[3][0] = 0;   n[3][1] = 0;   n[3][2] = 0;   n[3][3] = 1;
     }
 
+    /**************************** Operators *****************************/
+
     double& operator ()(int i, int j)
     {
         return (n[j][i]);
@@ -48,6 +54,8 @@ public:
     {
         return (*reinterpret_cast<const Vector3D *>(n[j]));
     }
+
+    /**************************** Transformations *****************************/
 
     Matrix4D identity()
     {
@@ -102,8 +110,38 @@ public:
                          0.0, 0.0, sz, 0.0,
                          0.0, 0.0, 0.0, 1.0));
     }
+
+    /**************************** Graphics Pipeline *****************************/
+
+    Matrix4D world_to_camera(const Point& eye, const Point& at, const Vector3D& up)
+    {
+        Vector3D At = (at - eye).to_vector();
+        At = At.Normalize();
+        Vector3D V = At.Cross(up);
+        V = V.Normalize();
+        Vector3D U = V.Cross(At);
+        U = U.Normalize();
+        return (Matrix4D( V.x,  V.y,  V.z, -eye.x,
+                          U.x,  U.y,  U.z, -eye.y,
+                         At.x, At.y, At.z, -eye.z,
+                          0.0,  0.0,  0.0, 1.0));
+    }
+
+    Matrix4D clip_to_device(int width, int height)
+    {
+        double w = width * 1.0;
+        double h = height * 1.0;
+        double nh = h * -1.0;
+
+        return (Matrix4D(  w, 0.0, 0.0, 0.0,
+                         0.0,  nh, 0.0,   h,
+                         0.0, 0.0, 1.0, 0.0,
+                         0.0, 0.0, 0.0, 1.0));
+    }
+
 };
 
+/**************************** Inline Operators *****************************/
  inline Matrix4D operator *(const Matrix4D& a, const Matrix4D& b)
     {
         return (Matrix4D(a(0,0) * b(0,0) + a(0,1) * b(1,0) + a(0,2) * b(2,0) + a(0,3) * b(3,0), 
@@ -138,3 +176,5 @@ public:
                        m(2,0) * p.x + m(2,1) * p.y + m(2,2) * p.z + m(2,3) * p.w,
                        m(3,0) * p.x + m(3,1) * p.y + m(3,2) * p.z + m(3,3) * p.w));
     }
+
+    #endif //__MATRIX4D_H__
