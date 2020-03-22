@@ -1,4 +1,5 @@
 #include "Data_Structures/Vector3D.h"
+#include "Data_Structures/Point.h"
 #include "Data_Structures/PointH.h"
 
 struct Matrix4D
@@ -55,6 +56,51 @@ public:
                          0, 1, 0, 0,
                          0, 0, 1, 0,
                          0, 0, 0, 1));
+    }
+
+    void SetTranslation(const Point& p)
+    {
+        n[3][0] = p.x;
+        n[3][1] = p.y;
+        n[3][2] = p.z;
+    }
+
+    Matrix4D MakeRotationX(double t)
+    {
+        double c = cos(t);
+        double s = sin(t);
+        return (Matrix4D(1.0, 0.0, 0.0, 0.0,
+                         0.0,   c,  -s, 0.0,
+                         0.0,   s,   c, 0.0,
+                         0.0, 0.0, 0.0, 1.0));
+    }
+
+    Matrix4D MakeRotationY(double t)
+    {
+        double c = cos(t);
+        double s = sin(t);
+        return (Matrix4D(  c, 0.0,   s, 0.0,
+                         0.0, 1.0, 0.0, 0.0,
+                          -s, 0.0,   c, 0.0,
+                         0.0, 0.0, 0.0, 1.0));
+    }
+
+    Matrix4D MakeRotationZ(double t)
+    {
+        double c = cos(t);
+        double s = sin(t);
+        return (Matrix4D(  c,  -s, 0.0, 0.0,
+                           s,   c, 0.0, 0.0,
+                         0.0, 0.0, 1.0, 0.0,
+                         0.0, 0.0, 0.0, 1.0));
+    }
+
+    Matrix4D MakeScale(double sx, double sy, double sz)
+    {
+        return (Matrix4D(sx, 0.0, 0.0, 0.0,
+                         0.0, sy, 0.0, 0.0,
+                         0.0, 0.0, sz, 0.0,
+                         0.0, 0.0, 0.0, 1.0));
     }
 };
 
