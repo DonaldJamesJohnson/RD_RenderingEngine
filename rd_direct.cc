@@ -2,17 +2,16 @@
 #include "rd_error.h"
 #include "rd_display.h"
 #include "iostream"
-#include "Vector3D.h"
-
-typedef double Point[3];
-typedef double Pointh[4];
-typedef double XFORM[4][4];
+#include "Data_Structures/Vector3D.h"
+#include "Data_Structures/Point.h"
+#include "Data_Structures/PointH.h"
+#include "Data_Structures/Matrix4D.h"
+#include "vector"
+using std::vector;
 
 int frameNumber;
 float redgreenblue[3] = {1.0, 1.0, 1.0};
-Point point;
-Pointh pointh;
-XFORM Xform;
+vector<Matrix4D> xforms;
 
 int REDirect::rd_display(const string & name, const string & type, const string & mode)
 {
@@ -413,23 +412,15 @@ void REDirect::fillSpan(int xs, int xe, int y)
 }
 */
 
-void multiply(Point& r, float scalar, Point p)
+
+void push(const Matrix4D& m)
 {
-    r[0] = scalar * p[0];
-    r[1] = scalar * p[1];
-    r[2] = scalar * p[2];
+    xforms.push_back(m);
 }
 
-void multiply(Point& r, Point p, float scalar)
+Matrix4D pop()
 {
-    r[0] = scalar * p[0];
-    r[1] = scalar * p[1];
-    r[2] = scalar * p[2];
-}
-
-void copy(Point& dest, Point src)
-{
-    dest[0] = src[0];
-    dest[1] = src[1];
-    dest[2] = src[2];
+    Matrix4D m = xforms.back();
+    xforms.pop_back();
+    return m;
 }
