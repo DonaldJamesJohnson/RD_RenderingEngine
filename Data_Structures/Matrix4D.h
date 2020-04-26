@@ -139,6 +139,16 @@ public:
                          0.0, 0.0, 0.0, 1.0));
     }
 
+    Matrix4D camera_to_clip(double fov, double near, double far, double aspect)
+    {
+        double tan_theta = tan(fov) / 2;
+
+        return (Matrix4D(1/(aspect * tan_theta), 0.0 , 0.0, 0.0,
+                         0.0, 1/tan_theta, 0.0, 0.0,
+                         0.0, 0.0, far / (far-near), -(far * near) / (far - near),
+                         0.0, 0.0, 1.0, 0.0));
+    }
+
 };
 
 /**************************** Inline Operators *****************************/
