@@ -152,7 +152,7 @@ public:
 };
 
 /**************************** Inline Operators *****************************/
- inline Matrix4D operator *(const Matrix4D& a, const Matrix4D& b)
+ inline Matrix4D Matrix_Matrix_Multiply(const Matrix4D& a, const Matrix4D& b)
     {
         return (Matrix4D(a(0,0) * b(0,0) + a(0,1) * b(1,0) + a(0,2) * b(2,0) + a(0,3) * b(3,0), 
                          a(0,0) * b(0,1) + a(0,1) * b(1,1) + a(0,2) * b(2,1) + a(0,3) * b(3,1),
@@ -172,14 +172,14 @@ public:
                          a(3,0) * b(0,3) + a(3,1) * b(1,3) + a(3,2) * b(2,3) + a(3,3) * b(3,3)));
     }
 
-    inline Vector3D operator *(const Matrix4D& m, const Vector3D& v)
+    inline Vector3D Matrix_Vector_Multiply(const Matrix4D& m, const Vector3D& v)
     {
         return (Vector3D(m(0,0) * v.x + m(0,1) * v.y + m(0,2) * v.z,
                          m(1,0) * v.x + m(1,1) * v.y + m(1,2) * v.z,
                          m(2,0) * v.x + m(2,1) * v.y + m(2,2) * v.z));
     }
 
-    inline PointH operator *(const Matrix4D& m, const PointH& p)
+    inline PointH Matrix_PointH_Multiply(const Matrix4D& m, const PointH& p)
     {
         return (PointH(m(0,0) * p.x + m(0,1) * p.y + m(0,2) * p.z + m(0,3) * p.w,
                        m(1,0) * p.x + m(1,1) * p.y + m(1,2) * p.z + m(1,3) * p.w,
