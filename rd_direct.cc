@@ -12,6 +12,15 @@ using std::vector;
 int frameNumber;
 float redgreenblue[3] = {1.0, 1.0, 1.0};
 vector<Matrix4D> xforms;
+vector<Matrix4D> currXform;
+Matrix4D world_to_clip;
+Matrix4D clip_to_device;
+double cam_fov = 90.0;
+double near_clip = 1.0;
+double far_clip = 1000000000.0;
+Point cam_eye = Point(0,0,0);
+Point cam_look_at = Point(0,0,-1);
+Point cam_up = Point(0,1,0); 
 
 int REDirect::rd_display(const string & name, const string & type, const string & mode)
 {
@@ -366,53 +375,6 @@ void REDirect::fill(int x, int y, float seed_color[3], float new_color[3])
     }
 }
 
-/*
-void REDirect::fill(int xs, int xe, int y, float seed_color[3])
-{
-    int new_xs;
-    int new_xe;
-    for (new_xs = new_xe = xs; new_xe < xe; new_xs = new_xe)
-    {
-       // std::cout << "PREFINDLOOP:new_xs: " << new_xs << " | new_xe: " << new_xe << " | y: " << y << std::endl;
-        findSpan(new_xs, new_xe, y, seed_color);
-        fillSpan(xs, xe, y);
-        std::cout << "LOOP:new_xs: " << new_xs << " | new_xe: " << new_xe << " | y: " << y << std::endl;
-        if (new_xs != new_xe) fill(new_xs, new_xe, y++, seed_color);
-        new_xe++;
-    }
-}
-*/
-/*
-int REDirect::findSpan(int& new_xs, int& new_xe, int y, float seed_color[3])
-{
-    float check_color[3];
-    rd_read_pixel(new_xe, y, check_color);
-    while (check_color[0] == seed_color[0] && check_color[1] == seed_color[1] && check_color[2] == seed_color[2])
-    {
-        if (new_xe <= display_xSize) new_xe++;
-        rd_read_pixel(new_xe, y, check_color);
-    }
-    rd_read_pixel(new_xs-1, y, check_color);
-    while (check_color[0] == seed_color[0] && check_color[1] == seed_color[1] && check_color[2] == seed_color[2])
-    {
-        if (new_xs >= 0) new_xs--;
-        rd_read_pixel(new_xs, y, check_color);
-    }
-    std::cout << "FOUND:   xs: " << new_xs << " | xe: " << new_xe << " | y: " << y << std::endl;
-}
-*/
-/*
-void REDirect::fillSpan(int xs, int xe, int y)
-{
-    std::cout << "FILLING: xs: " << xs << " | xe: " << xe << " | y: " << y << std::endl;
-    for (xs; xs < xe; xs++)
-    {
-        rd_write_pixel(xs, y, redgreenblue);
-    }
-}
-*/
-
-
 void push(const Matrix4D& m)
 {
     xforms.push_back(m);
@@ -423,4 +385,50 @@ Matrix4D pop()
     Matrix4D m = xforms.back();
     xforms.pop_back();
     return m;
+}
+
+int REDirect::rd_translate(const float offset[3])
+{
+
+    return RD_OK;
+}
+int REDirect::rd_scale(const float scale_factor[3])
+{
+    return RD_OK;
+}
+int REDirect::rd_rotate_xy(float angle)
+{
+    return RD_OK;
+}
+int REDirect::rd_rotate_yz(float angle)
+{
+    return RD_OK;
+}
+int REDirect::rd_rotate_zx(float angle)
+{
+    return RD_OK;
+}
+int REDirect::rd_matrix(const float * mat)
+{
+    return RD_OK;
+}
+  
+int REDirect::rd_xform_push(void)
+{
+    return RD_OK;
+}
+int REDirect::rd_xform_pop(void)
+{
+    pop();
+    return RD_OK;
+}
+
+int point_pipeline(PointH ph)
+{
+    for (int i = 0; i < currXform.size; i++) ph = Matrix_PointH_Multiply(currXform[i], ph);
+}
+
+int line_pipeline(PointH ph, bool draw)
+{
+
 }

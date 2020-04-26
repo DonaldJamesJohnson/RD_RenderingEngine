@@ -72,31 +72,30 @@ struct PointH
     }
 };
 
-inline PointH operator +(const PointH& a, const PointH& b)
+inline PointH PointH_PointH_Add(const PointH& a, const PointH& b)
 {
     return (PointH(a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w));
 }
 
-inline PointH operator -(const PointH& a, const PointH& b)
+inline PointH PointH_PointH_Subtract(const PointH& a, const PointH& b)
 {
     return (PointH(a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w)); 
 }
 
-inline PointH operator *(const PointH& p, double s)
+inline PointH PointH_Scale_Multiply(const PointH& p, double s)
 {
     return (PointH(p.x * s, p.y * s, p.z * s, p.w * s));
 }
 
-inline PointH operator /(const PointH& p, double s)
+inline PointH PointH_Scale_Divide(const PointH& p, double s)
 {
     s = 1.0f / s;
     return (PointH(p.x * s, p.y * s, p.z * s, p.w * s));
 }
 
-inline PointH operator -(const PointH& p)
+inline PointH PointH_Negate(const PointH& p)
 {
     return (PointH(-p.x, -p.y, -p.z, -p.w));
 }
-
 
 #endif /*__POINTH_H__*/

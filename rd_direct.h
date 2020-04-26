@@ -50,13 +50,21 @@ public:
   
   void fill(int x, int y, float seed_color[3], float new_color[3]);
 
-/*
-  void fill(int xs, int xe, int y, float seed_color[3]);
+  int rd_translate(const float offset[3]);
+  int rd_scale(const float scale_factor[3]);
+  int rd_rotate_xy(float angle);
+  int rd_rotate_yz(float angle);
+  int rd_rotate_zx(float angle);
+  int rd_matrix(const float * mat);
+  
+  int rd_xform_push(void);
+  int rd_xform_pop(void);
 
-  int findSpan(int& new_xs, int& new_xe, int y, float seed_color[3]);
-
-  void fillSpan(int xs, int xe, int y);
-*/
+  int rd_cone(float height, float radius, float thetamax);
+  int rd_cube(void);
+  int rd_cylinder(float radius, float zmin, float zmax, float thetamax);
+  int rd_disk(float height, float radius, float theta);
+  int rd_sphere(float radius, float zmin, float zmax, float thetamax);
 };
 
 #endif /* RD_ENGINE_DIRECT_H */

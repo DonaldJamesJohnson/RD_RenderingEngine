@@ -94,28 +94,28 @@ struct Vector3D
     }
 };
 
-inline Vector3D operator +(const Vector3D& a, const Vector3D& b)
+inline Vector3D Vector_Vector_Add(const Vector3D& a, const Vector3D& b)
 {
     return (Vector3D(a.x + b.x, a.y + b.y, a.z + b.z));
 }
 
-inline Vector3D operator -(const Vector3D& a, const Vector3D& b)
+inline Vector3D Vector_Vector_Subtract(const Vector3D& a, const Vector3D& b)
 {
     return (Vector3D(a.x - b.x, a.y - b.y, a.z - b.z)); 
 }
 
-inline Vector3D operator *(const Vector3D& v, double s)
+inline Vector3D Vector_Scale_Multiply(const Vector3D& v, double s)
 {
     return (Vector3D(v.x * s, v.y * s, v.z * s));
 }
 
-inline Vector3D operator /(const Vector3D& v, double s)
+inline Vector3D Vector_Scale_Divide(const Vector3D& v, double s)
 {
     s = 1.0f / s;
     return (Vector3D(v.x * s, v.y * s, v.z * s));
 }
 
-inline Vector3D operator -(const Vector3D& v)
+inline Vector3D Vector_Negate(const Vector3D& v)
 {
     return (Vector3D(-v.x, -v.y, -v.z));
 }

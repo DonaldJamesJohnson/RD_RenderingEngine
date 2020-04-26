@@ -73,28 +73,28 @@ struct Point
     }
 };
 
-inline Point operator +(const Point& a, const Point& b)
+inline Point Point_Point_Add(const Point& a, const Point& b)
 {
     return (Point(a.x + b.x, a.y + b.y, a.z + b.z));
 }
 
-inline Point operator -(const Point& a, const Point& b)
+inline Point Point_Point_Subtract(const Point& a, const Point& b)
 {
     return (Point(a.x - b.x, a.y - b.y, a.z - b.z)); 
 }
 
-inline Point operator *(const Point& p, double s)
+inline Point Point_Scale_Multiply(const Point& p, double s)
 {
     return (Point(p.x * s, p.y * s, p.z * s));
 }
 
-inline Point operator /(const Point& p, double s)
+inline Point Point_Scale_Divide(const Point& p, double s)
 {
     s = 1.0f / s;
     return (Point(p.x * s, p.y * s, p.z * s));
 }
 
-inline Point operator -(const Point& p)
+inline Point Point_Negate(const Point& p)
 {
     return (Point(-p.x, -p.y, -p.z));
 }
