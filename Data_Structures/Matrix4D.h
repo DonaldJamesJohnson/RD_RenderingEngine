@@ -1,9 +1,9 @@
 #ifndef __MATRIX4D_H__
 #define __MATRIX4D_H__
 
-#include "Data_Structures/Vector3D.h"
-#include "Data_Structures/Point.h"
-#include "Data_Structures/PointH.h"
+#include "Vector3D.h"
+#include "Point.h"
+#include "PointH.h"
 
 struct Matrix4D
 {

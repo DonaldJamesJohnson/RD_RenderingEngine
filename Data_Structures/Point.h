@@ -1,7 +1,7 @@
 #ifndef __POINT_H__
 #define __POINT_H__
 
-#include "Data_Structures/Vector3D.h"
+#include "Vector3D.h"
 
 struct Point
 {
