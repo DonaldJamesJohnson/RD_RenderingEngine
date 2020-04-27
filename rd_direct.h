@@ -3,6 +3,7 @@
 
 #include "rd_enginebase.h"
 #include "pnm_display.h"
+#include "Data_Structures/PointH.h"
 
 #include <string>
 using std::string;
@@ -77,6 +78,10 @@ public:
   int rd_cylinder(float radius, float zmin, float zmax, float thetamax);
   int rd_disk(float height, float radius, float theta);
   int rd_sphere(float radius, float zmin, float zmax, float thetamax);
+
+ int point_pipeline(PointH& ph);
+
+ int line_pipeline(PointH ph, bool draw);
 };
 
 #endif /* RD_ENGINE_DIRECT_H */

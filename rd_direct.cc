@@ -21,7 +21,8 @@ double near_clip = 1.0;
 double far_clip = 1000000000.0;
 Point cam_eye = Point(0,0,0);
 Point cam_look_at = Point(0,0,-1);
-Vector3D cam_up = Vector3D(0,1,0); 
+Vector3D cam_up = Vector3D(0,1,0);
+PointH point_store; 
 
 int REDirect::rd_display(const string & name, const string & type, const string & mode)
 {
@@ -36,7 +37,7 @@ int REDirect::rd_format(int xresolution, int yresolution)
 int REDirect::rd_world_begin(void)
 {
     rd_disp_init_frame(frameNumber);
-    currXform = currXform.identity;
+    currXform = currXform.identity();
     world_to_cam = world_to_cam.world_to_camera(cam_eye, cam_look_at, cam_up);
     cam_to_clip = cam_to_clip.camera_to_clip(cam_fov, near_clip, far_clip, (display_xSize / display_ySize));
     clip_to_device = clip_to_device.clip_to_device(display_xSize, display_ySize);
@@ -395,18 +396,6 @@ void REDirect::fill(int x, int y, float seed_color[3], float new_color[3])
     }
 }
 
-void push(const Matrix4D& m)
-{
-    xforms.push_back(m);
-}
-
-Matrix4D pop()
-{
-    Matrix4D m = xforms.back();
-    xforms.pop_back();
-    return m;
-}
-
 int REDirect::rd_translate(const float offset[3])
 {
     Matrix4D trans_matrix;
@@ -446,18 +435,16 @@ int REDirect::rd_rotate_zx(float angle)
     currXform = Matrix_Matrix_Multiply(currXform, zx_matrix);
     return RD_OK;
 }
-int REDirect::rd_matrix(const float * mat)
-{
-    return RD_OK;
-}
   
 int REDirect::rd_xform_push(void)
 {
+    xforms.push_back(currXform);
     return RD_OK;
 }
 int REDirect::rd_xform_pop(void)
 {
-    pop();
+    currXform = xforms.back();
+    xforms.pop_back();
     return RD_OK;
 }
 
@@ -495,14 +482,19 @@ int REDirect::rd_clipping(float znear, float zfar)
 
 int REDirect::rd_pointset(const string & vertex_type, int nvertex, const float * vertex)
 {
-
+    for (int i = 0; i < nvertex; i++)
+    {
+        PointH p;
+        
+        point_pipeline(p);
+    }
 }
-int rd_polyset(const string & vertex_type, int nvertex, const float * vertex, int nface, const int * face)
+int REDirect::rd_polyset(const string & vertex_type, int nvertex, const float * vertex, int nface, const int * face)
 {
 
 }
 
-int point_pipeline(PointH ph)
+int REDirect::point_pipeline(PointH& ph)
 {
     ph = Matrix_PointH_Multiply(currXform, ph);
     ph = Matrix_PointH_Multiply(world_to_cam, ph);
@@ -510,33 +502,72 @@ int point_pipeline(PointH ph)
     if (ph[0] >= 0 && ph[0] <= 1 && ph[1] >= 0 && ph[1] <= 1 && ph[2] >= 0 && ph[2] <= 1)
     {
         ph = Matrix_PointH_Multiply(clip_to_device, ph);
-        rd_write_pixel(ph[0], ph[1], redgreenblue); // ???
+        rd_write_pixel(ph[0], ph[1], redgreenblue);
     }
+    return RD_OK;
 }
 
-int line_pipeline(PointH ph, bool draw)
+int REDirect::line_pipeline(PointH ph, bool draw)
 {
-
+    if (point_pipeline(ph)) rd_write_pixel(ph[0], ph[1], redgreenblue);
+    if (!draw) point_store = ph;
+    else if (draw)
+    {
+        point_store = Matrix_PointH_Multiply(clip_to_device, point_store);
+        ph = Matrix_PointH_Multiply(clip_to_device, ph);
+        float start[3];
+        float end[3];
+        start[0] = point_store[0];
+        start[1] = point_store[1];
+        start[2] = point_store[2];
+        end[0] = point_store[0];
+        end[1] = point_store[1];
+        end[2] = point_store[2];
+        line(start, end);
+        point_store = ph;
+    } 
+    return RD_OK;
 }
 
-
-
-int REDirect::rd_cone(float height, float radius, float thetamax)
-{
-
-}
 int REDirect::rd_cube(void)
 {
+    PointH p1 = PointH(-1, -1, -1, 1);
+    PointH p2 = PointH(1, -1, -1, 1);
+    PointH p3 = PointH(1, 1, -1, 1);
+    PointH p4 = PointH(-1, 1, -1, 1);
+    PointH p5 = PointH(-1, -1, 1, 1);
+    PointH p6 = PointH(1, -1, 1, 1);
+    PointH p7 = PointH(1, 1, 1, 1);
+    PointH p8 = PointH(-1, 1, 1, 1);
+    line_pipeline(p1, false);
+    line_pipeline(p2, true);
+    line_pipeline(p3, true);
+    line_pipeline(p4, true);
+    line_pipeline(p1, true);
+    line_pipeline(p5, true);
+    line_pipeline(p6, true);
+    line_pipeline(p7, true);
+    line_pipeline(p8, true);
+    line_pipeline(p5, true);
 
 }
+
+int REDirect::rd_disk(float height, float radius, float theta)
+{
+    std::cout << theta << std::endl;
+}
+
 int REDirect::rd_cylinder(float radius, float zmin, float zmax, float thetamax)
 {
 
 }
-int REDirect::rd_disk(float height, float radius, float theta)
-{
 
+int REDirect::rd_cone(float height, float radius, float thetamax)
+{
+    rd_disk(height, radius, thetamax);
 }
+
+
 int REDirect::rd_sphere(float radius, float zmin, float zmax, float thetamax)
 {
 
