@@ -12,15 +12,16 @@ using std::vector;
 int frameNumber;
 float redgreenblue[3] = {1.0, 1.0, 1.0};
 vector<Matrix4D> xforms;
-vector<Matrix4D> currXform;
-Matrix4D world_to_clip;
+Matrix4D currXform;
+Matrix4D world_to_cam;
+Matrix4D cam_to_clip;
 Matrix4D clip_to_device;
 double cam_fov = 90.0;
 double near_clip = 1.0;
 double far_clip = 1000000000.0;
 Point cam_eye = Point(0,0,0);
 Point cam_look_at = Point(0,0,-1);
-Point cam_up = Point(0,1,0); 
+Vector3D cam_up = Vector3D(0,1,0); 
 
 int REDirect::rd_display(const string & name, const string & type, const string & mode)
 {
@@ -35,6 +36,10 @@ int REDirect::rd_format(int xresolution, int yresolution)
 int REDirect::rd_world_begin(void)
 {
     rd_disp_init_frame(frameNumber);
+    currXform = currXform.identity;
+    world_to_cam = world_to_cam.world_to_camera(cam_eye, cam_look_at, cam_up);
+    cam_to_clip = cam_to_clip.camera_to_clip(cam_fov, near_clip, far_clip, (display_xSize / display_ySize));
+    clip_to_device = clip_to_device.clip_to_device(display_xSize, display_ySize);
     return RD_OK;
 }
 int REDirect::rd_world_end(void)
@@ -80,12 +85,35 @@ int REDirect::rd_background(const float color[])
 
 int REDirect::rd_point(const float p[3])
 {
-    return rd_write_pixel(p[0], p[1], redgreenblue);
+    //return rd_write_pixel(p[0], p[1], redgreenblue); // OLD ROUTINE
+
+    PointH ph;
+    ph[0] = p[0];
+    ph[1] = p[1];
+    ph[2] = p[2];
+    ph[3] = 1;
+    point_pipeline(ph);
+    return RD_OK;
 }
 
 int REDirect::rd_line(const float start[3], const float end[3])
 {
-    line(start, end);
+    //line(start, end); // OLD ROUTINE
+    
+    PointH ph;
+    ph[0] = start[0];
+    ph[1] = start[1];
+    ph[2] = start[2];
+    ph[3] = 1;
+
+    PointH ph2;
+    ph2[0] = end[0];
+    ph2[1] = end[1];
+    ph2[2] = end[2];
+    ph2[3] = 1;
+
+    line_pipeline(ph, false);
+    line_pipeline(ph2, true);
     return RD_OK;
 }
 
@@ -104,14 +132,6 @@ int REDirect::rd_fill(const float seed_point[3]) //xyz
     int x = seed_point[0];
     int y = seed_point[1];
     fill(x, y, seed_color, redgreenblue);
-    /*
-    int xs = seed_point[0];
-    int xe = xs+1;
-    int y = seed_point[1];
-    //findSpan(xs, xe, y, seed_color);
-    //std::cout << "xs: " << xs << " | xe: " << xe << std::endl;
-    fill(xs, xe, y, seed_color);
-    */
     return RD_OK;
 }
 
@@ -389,23 +409,41 @@ Matrix4D pop()
 
 int REDirect::rd_translate(const float offset[3])
 {
-
+    Matrix4D trans_matrix;
+    Point p;
+    p[0] = offset[0];
+    p[1] = offset[1];
+    p[2] = offset[2];
+    trans_matrix.SetTranslation(p);
+    currXform = Matrix_Matrix_Multiply(currXform, trans_matrix);
     return RD_OK;
 }
 int REDirect::rd_scale(const float scale_factor[3])
 {
+    Matrix4D scale_matrix;
+    scale_matrix = scale_matrix.MakeScale(scale_factor[0], scale_factor[1], scale_factor[2]);
+    currXform = Matrix_Matrix_Multiply(currXform, scale_matrix);
     return RD_OK;
 }
 int REDirect::rd_rotate_xy(float angle)
 {
+    Matrix4D xy_matrix;
+    xy_matrix = xy_matrix.MakeRotationZ(angle);
+    currXform = Matrix_Matrix_Multiply(currXform, xy_matrix);
     return RD_OK;
 }
 int REDirect::rd_rotate_yz(float angle)
 {
+    Matrix4D yz_matrix;
+    yz_matrix = yz_matrix.MakeRotationX(angle);
+    currXform = Matrix_Matrix_Multiply(currXform, yz_matrix);
     return RD_OK;
 }
 int REDirect::rd_rotate_zx(float angle)
 {
+    Matrix4D zx_matrix;
+    zx_matrix = zx_matrix.MakeRotationY(angle);
+    currXform = Matrix_Matrix_Multiply(currXform, zx_matrix);
     return RD_OK;
 }
 int REDirect::rd_matrix(const float * mat)
@@ -423,12 +461,83 @@ int REDirect::rd_xform_pop(void)
     return RD_OK;
 }
 
+
+int REDirect::rd_camera_eye(const float eyepoint[3])
+{
+    cam_eye[0] = eyepoint[0];
+    cam_eye[1] = eyepoint[1];
+    cam_eye[2] = eyepoint[2];
+    return RD_OK;
+}
+int REDirect::rd_camera_at(const float atpoint[3])
+{
+    cam_look_at[0] = atpoint[0];
+    cam_look_at[1] = atpoint[1];
+    cam_look_at[2] = atpoint[2];
+    return RD_OK;
+}
+int REDirect::rd_camera_up(const float up[3])
+{
+    cam_up[0] = up[0];
+    cam_up[1] = up[1];
+    cam_up[2] = up[2];
+    return RD_OK;
+}
+int REDirect::rd_camera_fov(float fov)
+{
+    cam_fov = fov;
+}
+int REDirect::rd_clipping(float znear, float zfar)
+{
+    near_clip = znear;
+    far_clip = zfar;
+}
+
+int REDirect::rd_pointset(const string & vertex_type, int nvertex, const float * vertex)
+{
+
+}
+int rd_polyset(const string & vertex_type, int nvertex, const float * vertex, int nface, const int * face)
+{
+
+}
+
 int point_pipeline(PointH ph)
 {
-    for (int i = 0; i < currXform.size; i++) ph = Matrix_PointH_Multiply(currXform[i], ph);
+    ph = Matrix_PointH_Multiply(currXform, ph);
+    ph = Matrix_PointH_Multiply(world_to_cam, ph);
+    ph = Matrix_PointH_Multiply(cam_to_clip, ph);
+    if (ph[0] >= 0 && ph[0] <= 1 && ph[1] >= 0 && ph[1] <= 1 && ph[2] >= 0 && ph[2] <= 1)
+    {
+        ph = Matrix_PointH_Multiply(clip_to_device, ph);
+        rd_write_pixel(ph[0], ph[1], redgreenblue); // ???
+    }
 }
 
 int line_pipeline(PointH ph, bool draw)
+{
+
+}
+
+
+
+int REDirect::rd_cone(float height, float radius, float thetamax)
+{
+
+}
+int REDirect::rd_cube(void)
+{
+
+}
+int REDirect::rd_cylinder(float radius, float zmin, float zmax, float thetamax)
+{
+
+}
+int REDirect::rd_disk(float height, float radius, float theta)
+{
+
+}
+int REDirect::rd_sphere(float radius, float zmin, float zmax, float thetamax)
 {
 
 }

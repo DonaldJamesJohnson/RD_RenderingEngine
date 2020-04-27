@@ -115,7 +115,7 @@ public:
 
     Matrix4D world_to_camera(const Point& eye, const Point& at, const Vector3D& up)
     {
-        Vector3D At = (at - eye).to_vector();
+        Vector3D At = Point_Point_Subtract(at, eye).to_vector();
         At = At.Normalize();
         Vector3D V = At.Cross(up);
         V = V.Normalize();

@@ -60,6 +60,18 @@ public:
   int rd_xform_push(void);
   int rd_xform_pop(void);
 
+  int rd_pointset(const string & vertex_type,
+			  int nvertex, const float * vertex);
+  int rd_polyset(const string & vertex_type, 
+			 int nvertex, const float * vertex,
+			 int nface,   const int * face);
+
+  int rd_camera_eye(const float eyepoint[3]);
+  int rd_camera_at(const float atpoint[3]);
+  int rd_camera_up(const float up[3]);
+  int rd_camera_fov(float fov);
+  int rd_clipping(float znear, float zfar);
+
   int rd_cone(float height, float radius, float thetamax);
   int rd_cube(void);
   int rd_cylinder(float radius, float zmin, float zmax, float thetamax);
