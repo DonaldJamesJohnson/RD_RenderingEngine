@@ -6,12 +6,14 @@
 #include "Data_Structures/Point.h"
 #include "Data_Structures/PointH.h"
 #include "Data_Structures/Matrix4D.h"
-#include "vector"
-using std::vector;
+#include <stack>
+using std::stack;
+using namespace std;
+
 
 int frameNumber;
 float redgreenblue[3] = {1.0, 1.0, 1.0};
-vector<Matrix4D> xforms;
+stack<Matrix4D> xforms;
 Matrix4D currXform;
 Matrix4D world_to_cam;
 Matrix4D cam_to_clip;
@@ -39,7 +41,7 @@ int REDirect::rd_world_begin(void)
     rd_disp_init_frame(frameNumber);
     currXform = currXform.identity();
     world_to_cam = world_to_cam.world_to_camera(cam_eye, cam_look_at, cam_up);
-    cam_to_clip = cam_to_clip.camera_to_clip(cam_fov, near_clip, far_clip, (display_xSize / display_ySize));
+    cam_to_clip = cam_to_clip.camera_to_clip(cam_fov, near_clip, far_clip, display_xSize, display_ySize);
     clip_to_device = clip_to_device.clip_to_device(display_xSize, display_ySize);
     return RD_OK;
 }
@@ -403,7 +405,7 @@ int REDirect::rd_translate(const float offset[3])
     p[0] = offset[0];
     p[1] = offset[1];
     p[2] = offset[2];
-    trans_matrix.SetTranslation(p);
+    trans_matrix = trans_matrix.SetTranslation(p);    
     currXform = Matrix_Matrix_Multiply(currXform, trans_matrix);
     return RD_OK;
 }
@@ -438,13 +440,14 @@ int REDirect::rd_rotate_zx(float angle)
   
 int REDirect::rd_xform_push(void)
 {
-    xforms.push_back(currXform);
+    Matrix4D push_trans = Matrix4D(currXform);
+    xforms.push(push_trans);
     return RD_OK;
 }
 int REDirect::rd_xform_pop(void)
 {
-    currXform = xforms.back();
-    xforms.pop_back();
+    currXform = xforms.top();
+    xforms.pop();
     return RD_OK;
 }
 
@@ -480,14 +483,19 @@ int REDirect::rd_clipping(float znear, float zfar)
     far_clip = zfar;
 }
 
-int REDirect::rd_pointset(const string & vertex_type, int nvertex, const float * vertex)
-{
-    for (int i = 0; i < nvertex; i++)
-    {
-        PointH p;
-        
-        point_pipeline(p);
-    }
+int REDirect::rd_pointset(const string & vertex_type,int nvertex, const float * vertex) 
+{ 
+    int num_points = nvertex; 	
+    float pn[3]; 	
+    const float * vertices1 = vertex; 	
+    for(int i = 0;i<num_points;i++) 	
+    { 	    
+        pn[0]=vertices1[i*3+0]; 		
+        pn[1]=vertices1[i*3+1]; 		
+        pn[2]=vertices1[i*3+2]; 		
+        rd_point(pn); 	
+        } 	
+return RD_OK; 
 }
 int REDirect::rd_polyset(const string & vertex_type, int nvertex, const float * vertex, int nface, const int * face)
 {
@@ -496,12 +504,35 @@ int REDirect::rd_polyset(const string & vertex_type, int nvertex, const float * 
 
 int REDirect::point_pipeline(PointH& ph)
 {
+    std::cout << ph[0] << ", " << ph[1]  << ", " << ph[2]  << ", " << ph[3] << '\n' << std::endl;
+    std::cout << "Current Transform" << std::endl;
+    std::cout << currXform[0][0] << " " << currXform[0][1] << " " << currXform[0][2] << " " << currXform[0][3] << std::endl;
+    std::cout << currXform[1][0] << " " << currXform[1][1] << " " << currXform[1][2] << " " << currXform[1][3] << std::endl;
+    std::cout << currXform[2][0] << " " << currXform[2][1] << " " << currXform[2][2] << " " << currXform[2][3] << std::endl;
+    std::cout << currXform[3][0] << " " << currXform[3][1] << " " << currXform[3][2] << " " << currXform[3][3] << '\n' << std::endl;
     ph = Matrix_PointH_Multiply(currXform, ph);
+    std::cout << ph[0] << ", " << ph[1]  << ", " << ph[2]  << ", " << ph[3] << '\n' << std::endl;
+    std::cout << "W-C Transform" << std::endl;
+    std::cout << world_to_cam[0][0] << " " << world_to_cam[0][1] << " " << world_to_cam[0][2] << " " << world_to_cam[0][3] << std::endl;
+    std::cout << world_to_cam[1][0] << " " << world_to_cam[1][1] << " " << world_to_cam[1][2] << " " << world_to_cam[1][3] << std::endl;
+    std::cout << world_to_cam[2][0] << " " << world_to_cam[2][1] << " " << world_to_cam[2][2] << " " << world_to_cam[2][3] << std::endl;
+    std::cout << world_to_cam[3][0] << " " << world_to_cam[3][1] << " " << world_to_cam[3][2] << " " << world_to_cam[3][3] << std::endl;
     ph = Matrix_PointH_Multiply(world_to_cam, ph);
+    std::cout << ph[0] << ", " << ph[1]  << ", " << ph[2]  << ", " << ph[3] << '\n' << std::endl;
+    std::cout << "C-C Transform" << std::endl;
+    std::cout << cam_to_clip[0][0] << " " << cam_to_clip[0][1] << " " << cam_to_clip[0][2] << " " << cam_to_clip[0][3] << std::endl;
+    std::cout << cam_to_clip[1][0] << " " << cam_to_clip[1][1] << " " << cam_to_clip[1][2] << " " << cam_to_clip[1][3] << std::endl;
+    std::cout << cam_to_clip[2][0] << " " << cam_to_clip[2][1] << " " << cam_to_clip[2][2] << " " << cam_to_clip[2][3] << std::endl;
+    std::cout << cam_to_clip[3][0] << " " << cam_to_clip[3][1] << " " << cam_to_clip[3][2] << " " << cam_to_clip[3][3] << '\n' << std::endl;
     ph = Matrix_PointH_Multiply(cam_to_clip, ph);
-    if (ph[0] >= 0 && ph[0] <= 1 && ph[1] >= 0 && ph[1] <= 1 && ph[2] >= 0 && ph[2] <= 1)
+    std::cout << ph[0] << ", " << ph[1]  << ", " << ph[2]  << ", " << ph[3] << std::endl;
+    if (ph[0] >= 0 && ph[0] <= 1 && ph[3] - ph[0] >= 0 && 
+        ph[1] >= 0 && ph[1] <= 1 && ph[3] - ph[1] >= 0 && 
+        ph[2] >= 0 && ph[2] <= 1 && ph[3] - ph[2] >= 0)
     {
+        std::cout << "In boundaries" << std::endl;
         ph = Matrix_PointH_Multiply(clip_to_device, ph);
+        std::cout << ph[0] << ", " << ph[1]  << ", " << ph[2]  << ", " << ph[3] << std::endl;
         rd_write_pixel(ph[0], ph[1], redgreenblue);
     }
     return RD_OK;
@@ -509,7 +540,8 @@ int REDirect::point_pipeline(PointH& ph)
 
 int REDirect::line_pipeline(PointH ph, bool draw)
 {
-    if (point_pipeline(ph)) rd_write_pixel(ph[0], ph[1], redgreenblue);
+    cout << "DRAW: " << draw << std::endl;
+    point_pipeline(ph);
     if (!draw) point_store = ph;
     else if (draw)
     {
@@ -520,9 +552,9 @@ int REDirect::line_pipeline(PointH ph, bool draw)
         start[0] = point_store[0];
         start[1] = point_store[1];
         start[2] = point_store[2];
-        end[0] = point_store[0];
-        end[1] = point_store[1];
-        end[2] = point_store[2];
+        end[0] = ph[0];
+        end[1] = ph[1];
+        end[2] = ph[2];
         line(start, end);
         point_store = ph;
     } 
@@ -554,7 +586,7 @@ int REDirect::rd_cube(void)
 
 int REDirect::rd_disk(float height, float radius, float theta)
 {
-    std::cout << theta << std::endl;
+    
 }
 
 int REDirect::rd_cylinder(float radius, float zmin, float zmax, float thetamax)
@@ -570,5 +602,5 @@ int REDirect::rd_cone(float height, float radius, float thetamax)
 
 int REDirect::rd_sphere(float radius, float zmin, float zmax, float thetamax)
 {
-
+    
 }

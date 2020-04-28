@@ -56,7 +56,6 @@ public:
   int rd_rotate_xy(float angle);
   int rd_rotate_yz(float angle);
   int rd_rotate_zx(float angle);
-  int rd_matrix(const float * mat);
   
   int rd_xform_push(void);
   int rd_xform_pop(void);

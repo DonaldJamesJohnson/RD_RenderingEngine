@@ -10,8 +10,8 @@ Color 1.0 0.5 0.7
 
 # In a fully functioning transformation pipeline, the next two lines
 # must be uncommented for the line to be seen.
-#Scale 0.005 -0.005 1
-#Translate -300 -200 -1
+Scale 0.005 -0.005 1
+Translate -300 -200 -1
 
 
 # This is an intermediate debugging version for device coordinates

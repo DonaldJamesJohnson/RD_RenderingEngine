@@ -4,6 +4,9 @@
 #include "Vector3D.h"
 #include "Point.h"
 #include "PointH.h"
+#include <iostream>
+#include <math.h>
+using namespace std;
 
 struct Matrix4D
 {
@@ -37,12 +40,12 @@ public:
 
     double& operator ()(int i, int j)
     {
-        return (n[j][i]);
+        return (n[i][j]);
     }
 
     const double& operator ()(int i, int j) const
     {
-        return (n[j][i]);
+        return (n[i][j]);
     }
 
     Vector3D& operator [](int j)
@@ -60,17 +63,18 @@ public:
     Matrix4D identity()
     {
 
-        return (Matrix4D(1, 0, 0, 0,
-                         0, 1, 0, 0,
-                         0, 0, 1, 0,
-                         0, 0, 0, 1));
+        return (Matrix4D(1.0, 0.0, 0.0, 0.0,
+                         0.0, 1.0, 0.0, 0.0,
+                         0.0, 0.0, 1.0, 0.0,
+                         0.0, 0.0, 0.0, 1.0));
     }
 
-    void SetTranslation(const Point& p)
+    Matrix4D SetTranslation(const Point& p)
     {
-        n[3][0] = p.x;
-        n[3][1] = p.y;
-        n[3][2] = p.z;
+        return (Matrix4D(1.0, 0.0, 0.0, p[0],
+                         0.0, 1.0, 0.0, p[1],
+                         0.0, 0.0, 1.0, p[2],
+                         0.0, 0.0, 0.0, 1.0));
     }
 
     Matrix4D MakeRotationX(double t)
@@ -117,24 +121,28 @@ public:
     {
         Vector3D At = Point_Point_Subtract(at, eye).to_vector();
         At = At.Normalize();
+
         Vector3D V = At.Cross(up);
         V = V.Normalize();
+       
         Vector3D U = V.Cross(At);
         U = U.Normalize();
+
         return (Matrix4D( V.x,  V.y,  V.z, -eye.x,
                           U.x,  U.y,  U.z, -eye.y,
                          At.x, At.y, At.z, -eye.z,
                           0.0,  0.0,  0.0, 1.0));
     }
 
-    Matrix4D camera_to_clip(double fov, double near, double far, double aspect)
+    Matrix4D camera_to_clip(double fov, double near, double far, double width, double height)
     {
-        double tan_theta = tan(fov) / 2;
+        double tan_theta = tan((fov/2) * M_PI / 180.0);
+        double aspect = width/height;
 
-        return (Matrix4D(1/(aspect * tan_theta), 0.0 , 0.0, 0.0,
-                         0.0, 1/tan_theta, 0.0, 0.0,
-                         0.0, 0.0, far / (far-near), -(far * near) / (far - near),
-                         0.0, 0.0, 1.0, 0.0));
+        return (Matrix4D((0.5/(aspect * tan_theta)), 0.0 , 0.5, 0.0,
+                         0.0, (0.5/tan_theta), 0.5, 0.0,
+                         0.0, 0.0, (far / (far-near)), (-(far * near) / (far - near)),
+                         0.0, 0.0, 0.0, 1.0));
     }
 
     Matrix4D clip_to_device(int width, int height)

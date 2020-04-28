@@ -1,6 +1,6 @@
 # This is a test/example rd file
 
-Display "Fill Test"  "Screen" "rgbsingle"
+Display "Fill Test"  "Screen" "rgbdouble"
 Format 400 400 
 
 # Testing filling
