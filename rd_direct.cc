@@ -18,13 +18,14 @@ Matrix4D currXform;
 Matrix4D world_to_cam;
 Matrix4D cam_to_clip;
 Matrix4D clip_to_device;
+Matrix4D final_trans;
 double cam_fov = 90.0;
 double near_clip = 1.0;
 double far_clip = 1000000000.0;
 Point cam_eye = Point(0,0,0);
 Point cam_look_at = Point(0,0,-1);
 Vector3D cam_up = Vector3D(0,1,0);
-PointH point_store; 
+PointH point_store;
 
 int REDirect::rd_display(const string & name, const string & type, const string & mode)
 {
@@ -43,6 +44,8 @@ int REDirect::rd_world_begin(void)
     world_to_cam = world_to_cam.world_to_camera(cam_eye, cam_look_at, cam_up);
     cam_to_clip = cam_to_clip.camera_to_clip(cam_fov, near_clip, far_clip, display_xSize, display_ySize);
     clip_to_device = clip_to_device.clip_to_device(display_xSize, display_ySize);
+    final_trans = Matrix4D(Matrix_Matrix_Multiply(clip_to_device, cam_to_clip));
+    final_trans = Matrix_Matrix_Multiply(final_trans, world_to_cam);
     return RD_OK;
 }
 int REDirect::rd_world_end(void)
@@ -440,7 +443,7 @@ int REDirect::rd_rotate_zx(float angle)
   
 int REDirect::rd_xform_push(void)
 {
-    Matrix4D push_trans = Matrix4D(currXform);
+    Matrix4D push_trans = currXform;
     xforms.push(push_trans);
     return RD_OK;
 }
@@ -476,11 +479,13 @@ int REDirect::rd_camera_up(const float up[3])
 int REDirect::rd_camera_fov(float fov)
 {
     cam_fov = fov;
+    return RD_OK;
 }
 int REDirect::rd_clipping(float znear, float zfar)
 {
     near_clip = znear;
     far_clip = zfar;
+    return RD_OK;
 }
 
 int REDirect::rd_pointset(const string & vertex_type,int nvertex, const float * vertex) 
@@ -499,7 +504,7 @@ return RD_OK;
 }
 int REDirect::rd_polyset(const string & vertex_type, int nvertex, const float * vertex, int nface, const int * face)
 {
-
+ return RD_OK;
 }
 
 int REDirect::point_pipeline(PointH& ph)
@@ -510,53 +515,69 @@ int REDirect::point_pipeline(PointH& ph)
     std::cout << currXform[1][0] << " " << currXform[1][1] << " " << currXform[1][2] << " " << currXform[1][3] << std::endl;
     std::cout << currXform[2][0] << " " << currXform[2][1] << " " << currXform[2][2] << " " << currXform[2][3] << std::endl;
     std::cout << currXform[3][0] << " " << currXform[3][1] << " " << currXform[3][2] << " " << currXform[3][3] << '\n' << std::endl;
-    ph = Matrix_PointH_Multiply(currXform, ph);
-    std::cout << ph[0] << ", " << ph[1]  << ", " << ph[2]  << ", " << ph[3] << '\n' << std::endl;
-    std::cout << "W-C Transform" << std::endl;
-    std::cout << world_to_cam[0][0] << " " << world_to_cam[0][1] << " " << world_to_cam[0][2] << " " << world_to_cam[0][3] << std::endl;
-    std::cout << world_to_cam[1][0] << " " << world_to_cam[1][1] << " " << world_to_cam[1][2] << " " << world_to_cam[1][3] << std::endl;
-    std::cout << world_to_cam[2][0] << " " << world_to_cam[2][1] << " " << world_to_cam[2][2] << " " << world_to_cam[2][3] << std::endl;
-    std::cout << world_to_cam[3][0] << " " << world_to_cam[3][1] << " " << world_to_cam[3][2] << " " << world_to_cam[3][3] << std::endl;
-    ph = Matrix_PointH_Multiply(world_to_cam, ph);
-    std::cout << ph[0] << ", " << ph[1]  << ", " << ph[2]  << ", " << ph[3] << '\n' << std::endl;
-    std::cout << "C-C Transform" << std::endl;
-    std::cout << cam_to_clip[0][0] << " " << cam_to_clip[0][1] << " " << cam_to_clip[0][2] << " " << cam_to_clip[0][3] << std::endl;
-    std::cout << cam_to_clip[1][0] << " " << cam_to_clip[1][1] << " " << cam_to_clip[1][2] << " " << cam_to_clip[1][3] << std::endl;
-    std::cout << cam_to_clip[2][0] << " " << cam_to_clip[2][1] << " " << cam_to_clip[2][2] << " " << cam_to_clip[2][3] << std::endl;
-    std::cout << cam_to_clip[3][0] << " " << cam_to_clip[3][1] << " " << cam_to_clip[3][2] << " " << cam_to_clip[3][3] << '\n' << std::endl;
-    ph = Matrix_PointH_Multiply(cam_to_clip, ph);
-    std::cout << ph[0] << ", " << ph[1]  << ", " << ph[2]  << ", " << ph[3] << std::endl;
-    if (ph[0] >= 0 && ph[0] <= 1 && ph[3] - ph[0] >= 0 && 
-        ph[1] >= 0 && ph[1] <= 1 && ph[3] - ph[1] >= 0 && 
-        ph[2] >= 0 && ph[2] <= 1 && ph[3] - ph[2] >= 0)
-    {
-        std::cout << "In boundaries" << std::endl;
-        ph = Matrix_PointH_Multiply(clip_to_device, ph);
-        std::cout << ph[0] << ", " << ph[1]  << ", " << ph[2]  << ", " << ph[3] << std::endl;
-        rd_write_pixel(ph[0], ph[1], redgreenblue);
-    }
+    PointH ph_trans;
+    ph_trans = Matrix_PointH_Multiply(currXform, ph);
+    std::cout << ph_trans[0] << ", " << ph_trans[1]  << ", " << ph_trans[2]  << ", " << ph_trans[3] << '\n' << std::endl;
+    ph_trans[0] = ph_trans[0] / ph_trans[3];
+    ph_trans[1] = ph_trans[1] / ph_trans[3];
+    ph_trans[2] = ph_trans[2] / ph_trans[3];
+    ph_trans[3] = 0;
+    std::cout << "DIVIDE BY W: " << ph_trans[0] << ", " << ph_trans[1]  << ", " << ph_trans[2]  << ", " << ph_trans[3] << '\n' << std::endl;
+    std::cout << "Final Transform" << std::endl;
+    std::cout << final_trans[0][0] << " " << final_trans[0][1] << " " << final_trans[0][2] << " " << final_trans[0][3] << std::endl;
+    std::cout << final_trans[1][0] << " " << final_trans[1][1] << " " << final_trans[1][2] << " " << final_trans[1][3] << std::endl;
+    std::cout << final_trans[2][0] << " " << final_trans[2][1] << " " << final_trans[2][2] << " " << final_trans[2][3] << std::endl;
+    std::cout << final_trans[3][0] << " " << final_trans[3][1] << " " << final_trans[3][2] << " " << final_trans[3][3] << '\n' << std::endl;
+    PointH finalPoint;
+    finalPoint = Matrix_PointH_Multiply(final_trans, ph_trans);
+    std::cout << finalPoint[0] << ", " << finalPoint[1]  << ", " << finalPoint[2]  << ", " << finalPoint[3] << std::endl;
+    finalPoint[0] = finalPoint[0] / finalPoint[3];
+    finalPoint[1] = finalPoint[1] / finalPoint[3];
+    finalPoint[2] = finalPoint[2] / finalPoint[3];
+    finalPoint[3] = 0;
+    std::cout << "DIVIDE BY W2: " << finalPoint[0] << ", " << finalPoint[1]  << ", " << finalPoint[2]  << ", " << finalPoint[3] << '\n' << std::endl;
+    rd_write_pixel(finalPoint[0], finalPoint[1], redgreenblue);
+   // }
     return RD_OK;
 }
 
 int REDirect::line_pipeline(PointH ph, bool draw)
 {
-    cout << "DRAW: " << draw << std::endl;
-    point_pipeline(ph);
-    if (!draw) point_store = ph;
+    PointH ph_trans;
+    ph_trans = Matrix_PointH_Multiply(currXform, ph);
+    std::cout << "Pre-DIVIDE BY W: " << ph_trans[0] << ", " << ph_trans[1]  << ", " << ph_trans[2]  << ", " << ph_trans[3] << '\n' << std::endl;
+    // ph_trans[0] = ph_trans[0];
+    // ph_trans[1] = ph_trans[1];
+    // ph_trans[2] = ph_trans[2];
+     //ph_trans[3] = 0;
+    std::cout << "DIVIDE BY W: " << ph_trans[0] << ", " << ph_trans[1]  << ", " << ph_trans[2]  << ", " << ph_trans[3] << '\n' << std::endl;
+    PointH finalPoint;
+    std::cout << "Final Transform" << std::endl;
+    std::cout << final_trans[0][0] << " " << final_trans[0][1] << " " << final_trans[0][2] << " " << final_trans[0][3] << std::endl;
+    std::cout << final_trans[1][0] << " " << final_trans[1][1] << " " << final_trans[1][2] << " " << final_trans[1][3] << std::endl;
+    std::cout << final_trans[2][0] << " " << final_trans[2][1] << " " << final_trans[2][2] << " " << final_trans[2][3] << std::endl;
+    std::cout << final_trans[3][0] << " " << final_trans[3][1] << " " << final_trans[3][2] << " " << final_trans[3][3] << '\n' << std::endl;
+    finalPoint = Matrix_PointH_Multiply(final_trans, ph_trans);
+    finalPoint[0] = finalPoint[0] / finalPoint[3];
+    finalPoint[1] = finalPoint[1] / finalPoint[3];
+    finalPoint[2] = finalPoint[2] / finalPoint[3];
+    std::cout << "DIVIDE BY W2: " << finalPoint[0] << ", " << finalPoint[1]  << ", " << finalPoint[2]  << ", " << finalPoint[3] << '\n' << std::endl;
+    if (!draw) point_store = finalPoint;
     else if (draw)
     {
-        point_store = Matrix_PointH_Multiply(clip_to_device, point_store);
-        ph = Matrix_PointH_Multiply(clip_to_device, ph);
         float start[3];
         float end[3];
         start[0] = point_store[0];
         start[1] = point_store[1];
         start[2] = point_store[2];
-        end[0] = ph[0];
-        end[1] = ph[1];
-        end[2] = ph[2];
+        end[0] = finalPoint[0];
+        end[1] = finalPoint[1];
+        end[2] = finalPoint[2];
+        cout << "DRAWING" << endl;
+        cout << "start: " << start[0] << " " << start[1] << " " << start[2] << endl;
+        cout << "end: " << end[0] << " " << end[1] << " " << end[2] << endl; 
         line(start, end);
-        point_store = ph;
+        point_store = finalPoint;
     } 
     return RD_OK;
 }
@@ -573,34 +594,42 @@ int REDirect::rd_cube(void)
     PointH p8 = PointH(-1, 1, 1, 1);
     line_pipeline(p1, false);
     line_pipeline(p2, true);
-    line_pipeline(p3, true);
-    line_pipeline(p4, true);
-    line_pipeline(p1, true);
-    line_pipeline(p5, true);
-    line_pipeline(p6, true);
-    line_pipeline(p7, true);
-    line_pipeline(p8, true);
-    line_pipeline(p5, true);
+    // line_pipeline(p3, true);
+    // line_pipeline(p4, true);
+    // line_pipeline(p1, true);
+    // line_pipeline(p5, true);
+    // line_pipeline(p6, true);
+    // line_pipeline(p7, true);
+    // line_pipeline(p8, true);
+    // line_pipeline(p5, true);
+    // line_pipeline(p6, false);
+    // line_pipeline(p2, true);
+    // line_pipeline(p7, false);
+    // line_pipeline(p3, true);
+    // line_pipeline(p8, false);
+    // line_pipeline(p4, true);
 
+    return RD_OK;
 }
 
 int REDirect::rd_disk(float height, float radius, float theta)
 {
-    
+     return RD_OK;
 }
 
 int REDirect::rd_cylinder(float radius, float zmin, float zmax, float thetamax)
 {
-
+ return RD_OK;
 }
 
 int REDirect::rd_cone(float height, float radius, float thetamax)
 {
     rd_disk(height, radius, thetamax);
+     return RD_OK;
 }
 
 
 int REDirect::rd_sphere(float radius, float zmin, float zmax, float thetamax)
 {
-    
+     return RD_OK;
 }

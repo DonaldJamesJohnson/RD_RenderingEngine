@@ -76,8 +76,12 @@ struct Vector3D
     Vector3D Normalize()
     {
         Vector3D v = *this;
-        v /= v.Magnitude(); 
-        return v;
+        double mag = v.Magnitude();
+        double vx = v.x / mag;
+        double vy = v.y / mag;
+        double vz = v.z / mag;
+        Vector3D newV = Vector3D(vx, vy, vz); 
+        return newV;
     }
 
     double Dot(const  Vector3D& b)
@@ -90,8 +94,8 @@ struct Vector3D
     {
         Vector3D a = *this;
         return (Vector3D(a.y * b.z - a.z * b.y,
-                        a.z * b.x - a.x * b.z,
-                        a.x * b.y - a.y * b.x));
+                         (a.x * b.z - a.z * b.x) * -1,
+                         a.x * b.y - a.y * b.x));
     }
 };
 

@@ -120,10 +120,10 @@ public:
     Matrix4D world_to_camera(const Point& eye, const Point& at, const Vector3D& up)
     {
         Vector3D At = Point_Point_Subtract(at, eye).to_vector();
-        At = At.Normalize();
+        At = Vector3D(At.Normalize());
 
         Vector3D V = At.Cross(up);
-        V = V.Normalize();
+        V = Vector3D(V.Normalize());
        
         Vector3D U = V.Cross(At);
         U = U.Normalize();
@@ -136,19 +136,19 @@ public:
 
     Matrix4D camera_to_clip(double fov, double near, double far, double width, double height)
     {
-        double tan_theta = tan((fov/2) * M_PI / 180.0);
+        double tan_theta = tan((fov/2));
         double aspect = width/height;
 
         return (Matrix4D((0.5/(aspect * tan_theta)), 0.0 , 0.5, 0.0,
                          0.0, (0.5/tan_theta), 0.5, 0.0,
-                         0.0, 0.0, (far / (far-near)), (-(far * near) / (far - near)),
-                         0.0, 0.0, 0.0, 1.0));
+                         0.0, 0.0, (far / (far-near)), (((far * near) * -1) / (far - near)),
+                         0.0, 0.0, 1.0, 0.0));
     }
 
     Matrix4D clip_to_device(int width, int height)
     {
-        double w = width * 1.0;
-        double h = height * 1.0;
+        double w = width;
+        double h = height;
         double nh = h * -1.0;
 
         return (Matrix4D(  w, 0.0, 0.0, 0.0,
@@ -161,22 +161,22 @@ public:
 /**************************** Inline Operators *****************************/
  inline Matrix4D Matrix_Matrix_Multiply(const Matrix4D& a, const Matrix4D& b)
     {
-        return (Matrix4D(a(0,0) * b(0,0) + a(0,1) * b(1,0) + a(0,2) * b(2,0) + a(0,3) * b(3,0), 
-                         a(0,0) * b(0,1) + a(0,1) * b(1,1) + a(0,2) * b(2,1) + a(0,3) * b(3,1),
-                         a(0,0) * b(0,2) + a(0,1) * b(1,2) + a(0,2) * b(2,2) + a(0,3) * b(3,2), 
-                         a(0,0) * b(0,3) + a(0,1) * b(1,3) + a(0,2) * b(2,3) + a(0,3) * b(3,3),  
-                         a(1,0) * b(0,0) + a(1,1) * b(1,0) + a(1,2) * b(2,0) + a(1,3) * b(3,0),  
-                         a(1,0) * b(0,1) + a(1,1) * b(1,1) + a(1,2) * b(2,1) + a(1,3) * b(3,1),  
-                         a(1,0) * b(0,2) + a(1,1) * b(1,2) + a(1,2) * b(2,2) + a(1,3) * b(3,2),  
-                         a(1,0) * b(0,3) + a(1,1) * b(1,3) + a(1,2) * b(2,3) + a(1,3) * b(3,3),  
-                         a(2,0) * b(0,0) + a(2,1) * b(1,0) + a(2,2) * b(2,0) + a(2,3) * b(3,0),  
-                         a(2,0) * b(0,1) + a(2,1) * b(1,1) + a(2,2) * b(2,1) + a(2,3) * b(3,1),  
-                         a(2,0) * b(0,2) + a(2,1) * b(1,2) + a(2,2) * b(2,2) + a(2,3) * b(3,2),
-                         a(2,0) * b(0,3) + a(2,1) * b(1,3) + a(2,2) * b(2,3) + a(2,3) * b(3,3),    
-                         a(3,0) * b(0,0) + a(3,1) * b(1,0) + a(3,2) * b(2,0) + a(3,3) * b(3,0), 
-                         a(3,0) * b(0,1) + a(3,1) * b(1,1) + a(3,2) * b(2,1) + a(3,3) * b(3,1), 
-                         a(3,0) * b(0,2) + a(3,1) * b(1,2) + a(3,2) * b(2,2) + a(3,3) * b(3,2), 
-                         a(3,0) * b(0,3) + a(3,1) * b(1,3) + a(3,2) * b(2,3) + a(3,3) * b(3,3)));
+        return (Matrix4D((a(0,0) * b(0,0)) + (a(0,1) * b(1,0)) + (a(0,2) * b(2,0)) + (a(0,3) * b(3,0)), 
+                         (a(0,0) * b(0,1)) + (a(0,1) * b(1,1)) + (a(0,2) * b(2,1)) + (a(0,3) * b(3,1)),
+                         (a(0,0) * b(0,2)) + (a(0,1) * b(1,2)) + (a(0,2) * b(2,2)) + (a(0,3) * b(3,2)), 
+                         (a(0,0) * b(0,3)) + (a(0,1) * b(1,3)) + (a(0,2) * b(2,3)) + (a(0,3) * b(3,3)),  
+                         (a(1,0) * b(0,0)) + (a(1,1) * b(1,0)) + (a(1,2) * b(2,0)) + (a(1,3) * b(3,0)),  
+                         (a(1,0) * b(0,1)) + (a(1,1) * b(1,1)) + (a(1,2) * b(2,1)) + (a(1,3) * b(3,1)),  
+                         (a(1,0) * b(0,2)) + (a(1,1) * b(1,2)) + (a(1,2) * b(2,2)) + (a(1,3) * b(3,2)),  
+                         (a(1,0) * b(0,3)) + (a(1,1) * b(1,3)) + (a(1,2) * b(2,3)) + (a(1,3) * b(3,3)),  
+                         (a(2,0) * b(0,0)) + (a(2,1) * b(1,0)) + (a(2,2) * b(2,0)) + (a(2,3) * b(3,0)),  
+                         (a(2,0) * b(0,1)) + (a(2,1) * b(1,1)) + (a(2,2) * b(2,1)) + (a(2,3) * b(3,1)),  
+                         (a(2,0) * b(0,2)) + (a(2,1) * b(1,2)) + (a(2,2) * b(2,2)) + (a(2,3) * b(3,2)),
+                         (a(2,0) * b(0,3)) + (a(2,1) * b(1,3)) + (a(2,2) * b(2,3)) + (a(2,3) * b(3,3)),    
+                         (a(3,0) * b(0,0)) + (a(3,1) * b(1,0)) + (a(3,2) * b(2,0)) + (a(3,3) * b(3,0)), 
+                         (a(3,0) * b(0,1)) + (a(3,1) * b(1,1)) + (a(3,2) * b(2,1)) + (a(3,3) * b(3,1)), 
+                         (a(3,0) * b(0,2)) + (a(3,1) * b(1,2)) + (a(3,2) * b(2,2)) + (a(3,3) * b(3,2)), 
+                         (a(3,0) * b(0,3)) + (a(3,1) * b(1,3)) + (a(3,2) * b(2,3)) + (a(3,3) * b(3,3))));
     }
 
     inline Vector3D Matrix_Vector_Multiply(const Matrix4D& m, const Vector3D& v)
