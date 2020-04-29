@@ -14,9 +14,9 @@ WorldBegin
 
 Translate 0 0 0 
 
-#Rotate "Y" 90
+Rotate "Y" 90
 
-#Rotate "X" 90
+Rotate "X" 90
 
 Color 0.0 0.0 0.0
 

@@ -525,24 +525,25 @@ int REDirect::point_pipeline(PointH& ph)
 
 int REDirect::line_pipeline(PointH ph, bool draw)
 {
-    //std::cout << "Pre-Current_Transform: " << ph[0] << ", " << ph[1]  << ", " << ph[2]  << ", " << ph[3] << '\n' << std::endl;
+    std::cout << "Pre-Current_Transform: " << ph[0] << ", " << ph[1]  << ", " << ph[2]  << ", " << ph[3] << '\n' << std::endl;
     PointH ph_trans;
     ph_trans = Matrix_PointH_Multiply(currXform, ph);
-    //std::cout << "Pre-Final_Transform: " << ph_trans[0] << ", " << ph_trans[1]  << ", " << ph_trans[2]  << ", " << ph_trans[3] << '\n' << std::endl;
-    // std::cout << "Final Transform" << std::endl;
-    // std::cout << final_trans[0][0] << " " << final_trans[0][1] << " " << final_trans[0][2] << " " << final_trans[0][3] << std::endl;
-    // std::cout << final_trans[1][0] << " " << final_trans[1][1] << " " << final_trans[1][2] << " " << final_trans[1][3] << std::endl;
-    // std::cout << final_trans[2][0] << " " << final_trans[2][1] << " " << final_trans[2][2] << " " << final_trans[2][3] << std::endl;
-    // std::cout << final_trans[3][0] << " " << final_trans[3][1] << " " << final_trans[3][2] << " " << final_trans[3][3] << '\n' << std::endl;
+    std::cout << "Pre-Final_Transform: " << ph_trans[0] << ", " << ph_trans[1]  << ", " << ph_trans[2]  << ", " << ph_trans[3] << '\n' << std::endl;
+    std::cout << "Final Transform" << std::endl;
+    std::cout << final_trans[0][0] << " " << final_trans[0][1] << " " << final_trans[0][2] << " " << final_trans[0][3] << std::endl;
+    std::cout << final_trans[1][0] << " " << final_trans[1][1] << " " << final_trans[1][2] << " " << final_trans[1][3] << std::endl;
+    std::cout << final_trans[2][0] << " " << final_trans[2][1] << " " << final_trans[2][2] << " " << final_trans[2][3] << std::endl;
+    std::cout << final_trans[3][0] << " " << final_trans[3][1] << " " << final_trans[3][2] << " " << final_trans[3][3] << '\n' << std::endl;
     PointH finalPoint;
     finalPoint = Matrix_PointH_Multiply(final_trans, ph_trans);
-    //std::cout << "Final Point: " << finalPoint[0] << ", " << finalPoint[1]  << ", " << finalPoint[2]  << ", " << finalPoint[3] << '\n' << std::endl;
+    std::cout << "Final Point: " << finalPoint[0] << ", " << finalPoint[1]  << ", " << finalPoint[2]  << ", " << finalPoint[3] << '\n' << std::endl;
     if (finalPoint[3] != 0)
     {
         finalPoint[0] = finalPoint[0] / finalPoint[3];
         finalPoint[1] = finalPoint[1] / finalPoint[3];
         finalPoint[2] = finalPoint[2] / finalPoint[3];
-    //std::cout << "DIVIDE BY W: " << finalPoint[0] << ", " << finalPoint[1]  << ", " << finalPoint[2]  << ", " << finalPoint[3] << '\n' << std::endl;
+        finalPoint[3] = 0;
+        std::cout << "DIVIDE BY W: " << finalPoint[0] << ", " << finalPoint[1]  << ", " << finalPoint[2]  << ", " << finalPoint[3] << '\n' << std::endl;
     }
     if (!draw) point_store = finalPoint;
     else if (draw)
@@ -555,9 +556,9 @@ int REDirect::line_pipeline(PointH ph, bool draw)
         end[0] = finalPoint[0];
         end[1] = finalPoint[1];
         end[2] = finalPoint[2];
-        //cout << "DRAWING LINE" << endl;
-        //cout << "start: " << start[0] << " " << start[1] << " " << start[2] << endl;
-        //cout << "end: " << end[0] << " " << end[1] << " " << end[2] << endl; 
+        cout << "DRAWING LINE" << endl;
+        cout << "start: " << start[0] << " " << start[1] << " " << start[2] << endl;
+        cout << "end: " << end[0] << " " << end[1] << " " << end[2] << endl; 
         line(start, end);
         point_store = finalPoint;
     } 
