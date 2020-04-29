@@ -755,5 +755,50 @@ int REDirect::rd_cone(float height, float radius, float thetamax)
 
 int REDirect::rd_sphere(float radius, float zmin, float zmax, float thetamax)
 {
-     return RD_OK;
+    float newTheta;
+    double PI_2 = 2 * M_PI;
+    float NSTEPS = 20;
+    bool draw = false;
+    float x;
+    float y;
+    PointH p;
+    for (int i = 0; i <= NSTEPS; i++)
+    {
+        newTheta = (i / NSTEPS) * PI_2;
+        y = radius * sin(newTheta);
+        x = radius * cos(newTheta);
+        p.x = x;
+        p.y = y;
+        p.z = zmin + zmax;
+        p.w = 1;
+        line_pipeline(p, draw);
+        draw = true;
+    }
+    draw = false;
+    for (int i = 0; i <= NSTEPS; i++)
+    {
+        newTheta = (i / NSTEPS) * PI_2;
+        y = radius * sin(newTheta);
+        x = radius * cos(newTheta) - sin(newTheta);
+        p.x = x;
+        p.y = y;
+        p.z = (zmin + zmax)
+        p.w = 1;
+        line_pipeline(p, draw);
+        draw = true;
+    }
+    // draw = false;
+    // for (int i = 0; i <= NSTEPS; i++)
+    // {
+    //     newTheta = (i / NSTEPS) * PI_2;
+    //     y = radius * sin(newTheta) + cos(newTheta);
+    //     x = radius * cos(newTheta);
+    //     p.x = x;
+    //     p.y = y;
+    //     p.z = (zmin + zmax);
+    //     p.w = 1;
+    //     line_pipeline(p, draw);
+    //     draw = true;
+    // }
+    return RD_OK;
 }
