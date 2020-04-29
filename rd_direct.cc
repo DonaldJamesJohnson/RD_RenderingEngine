@@ -443,7 +443,7 @@ int REDirect::rd_rotate_zx(float angle)
   
 int REDirect::rd_xform_push(void)
 {
-    Matrix4D push_trans = currXform;
+    Matrix4D push_trans = Matrix4D(currXform);
     xforms.push(push_trans);
     return RD_OK;
 }
@@ -478,6 +478,7 @@ int REDirect::rd_camera_up(const float up[3])
 }
 int REDirect::rd_camera_fov(float fov)
 {
+
     cam_fov = fov;
     return RD_OK;
 }
@@ -486,25 +487,6 @@ int REDirect::rd_clipping(float znear, float zfar)
     near_clip = znear;
     far_clip = zfar;
     return RD_OK;
-}
-
-int REDirect::rd_pointset(const string & vertex_type,int nvertex, const float * vertex) 
-{ 
-    int num_points = nvertex; 	
-    float pn[3]; 	
-    const float * vertices1 = vertex; 	
-    for(int i = 0;i<num_points;i++) 	
-    { 	    
-        pn[0]=vertices1[i*3+0]; 		
-        pn[1]=vertices1[i*3+1]; 		
-        pn[2]=vertices1[i*3+2]; 		
-        rd_point(pn); 	
-        } 	
-return RD_OK; 
-}
-int REDirect::rd_polyset(const string & vertex_type, int nvertex, const float * vertex, int nface, const int * face)
-{
- return RD_OK;
 }
 
 int REDirect::point_pipeline(PointH& ph)
@@ -543,24 +525,24 @@ int REDirect::point_pipeline(PointH& ph)
 
 int REDirect::line_pipeline(PointH ph, bool draw)
 {
-    std::cout << "Pre-Current_Transform: " << ph[0] << ", " << ph[1]  << ", " << ph[2]  << ", " << ph[3] << '\n' << std::endl;
+    //std::cout << "Pre-Current_Transform: " << ph[0] << ", " << ph[1]  << ", " << ph[2]  << ", " << ph[3] << '\n' << std::endl;
     PointH ph_trans;
     ph_trans = Matrix_PointH_Multiply(currXform, ph);
-    std::cout << "Pre-Final_Transform: " << ph_trans[0] << ", " << ph_trans[1]  << ", " << ph_trans[2]  << ", " << ph_trans[3] << '\n' << std::endl;
-    std::cout << "Final Transform" << std::endl;
-    std::cout << final_trans[0][0] << " " << final_trans[0][1] << " " << final_trans[0][2] << " " << final_trans[0][3] << std::endl;
-    std::cout << final_trans[1][0] << " " << final_trans[1][1] << " " << final_trans[1][2] << " " << final_trans[1][3] << std::endl;
-    std::cout << final_trans[2][0] << " " << final_trans[2][1] << " " << final_trans[2][2] << " " << final_trans[2][3] << std::endl;
-    std::cout << final_trans[3][0] << " " << final_trans[3][1] << " " << final_trans[3][2] << " " << final_trans[3][3] << '\n' << std::endl;
+    //std::cout << "Pre-Final_Transform: " << ph_trans[0] << ", " << ph_trans[1]  << ", " << ph_trans[2]  << ", " << ph_trans[3] << '\n' << std::endl;
+    // std::cout << "Final Transform" << std::endl;
+    // std::cout << final_trans[0][0] << " " << final_trans[0][1] << " " << final_trans[0][2] << " " << final_trans[0][3] << std::endl;
+    // std::cout << final_trans[1][0] << " " << final_trans[1][1] << " " << final_trans[1][2] << " " << final_trans[1][3] << std::endl;
+    // std::cout << final_trans[2][0] << " " << final_trans[2][1] << " " << final_trans[2][2] << " " << final_trans[2][3] << std::endl;
+    // std::cout << final_trans[3][0] << " " << final_trans[3][1] << " " << final_trans[3][2] << " " << final_trans[3][3] << '\n' << std::endl;
     PointH finalPoint;
     finalPoint = Matrix_PointH_Multiply(final_trans, ph_trans);
-    std::cout << "Final Point: " << finalPoint[0] << ", " << finalPoint[1]  << ", " << finalPoint[2]  << ", " << finalPoint[3] << '\n' << std::endl;
+    //std::cout << "Final Point: " << finalPoint[0] << ", " << finalPoint[1]  << ", " << finalPoint[2]  << ", " << finalPoint[3] << '\n' << std::endl;
     if (finalPoint[3] != 0)
     {
         finalPoint[0] = finalPoint[0] / finalPoint[3];
         finalPoint[1] = finalPoint[1] / finalPoint[3];
         finalPoint[2] = finalPoint[2] / finalPoint[3];
-    std::cout << "DIVIDE BY W: " << finalPoint[0] << ", " << finalPoint[1]  << ", " << finalPoint[2]  << ", " << finalPoint[3] << '\n' << std::endl;
+    //std::cout << "DIVIDE BY W: " << finalPoint[0] << ", " << finalPoint[1]  << ", " << finalPoint[2]  << ", " << finalPoint[3] << '\n' << std::endl;
     }
     if (!draw) point_store = finalPoint;
     else if (draw)
@@ -573,9 +555,9 @@ int REDirect::line_pipeline(PointH ph, bool draw)
         end[0] = finalPoint[0];
         end[1] = finalPoint[1];
         end[2] = finalPoint[2];
-        cout << "DRAWING LINE" << endl;
-        cout << "start: " << start[0] << " " << start[1] << " " << start[2] << endl;
-        cout << "end: " << end[0] << " " << end[1] << " " << end[2] << endl; 
+        //cout << "DRAWING LINE" << endl;
+        //cout << "start: " << start[0] << " " << start[1] << " " << start[2] << endl;
+        //cout << "end: " << end[0] << " " << end[1] << " " << end[2] << endl; 
         line(start, end);
         point_store = finalPoint;
     } 
@@ -616,7 +598,7 @@ int REDirect::rd_disk(float height, float radius, float theta)
 {
     float newTheta;
     double PI_2 = 2 * M_PI;
-    float NSTEPS = 20;
+    float NSTEPS = theta;
     bool draw = false;
     float x;
     float y;
@@ -757,11 +739,18 @@ int REDirect::rd_sphere(float radius, float zmin, float zmax, float thetamax)
 {
     float newTheta;
     double PI_2 = 2 * M_PI;
-    float NSTEPS = 20;
+    float NSTEPS = thetamax;
     bool draw = false;
     float x;
     float y;
     PointH p;
+    Matrix4D rotateX;
+    Matrix4D rotateY;
+    Matrix4D rotateZ;
+    rotateX = rotateX.MakeRotationX(90);
+    rotateY = rotateY.MakeRotationY(-90);
+    rotateZ = rotateZ.MakeRotationZ(90);
+
     for (int i = 0; i <= NSTEPS; i++)
     {
         newTheta = (i / NSTEPS) * PI_2;
@@ -771,6 +760,7 @@ int REDirect::rd_sphere(float radius, float zmin, float zmax, float thetamax)
         p.y = y;
         p.z = zmin + zmax;
         p.w = 1;
+        p = Matrix_PointH_Multiply(rotateZ, p);
         line_pipeline(p, draw);
         draw = true;
     }
@@ -779,26 +769,69 @@ int REDirect::rd_sphere(float radius, float zmin, float zmax, float thetamax)
     {
         newTheta = (i / NSTEPS) * PI_2;
         y = radius * sin(newTheta);
-        x = radius * cos(newTheta) - sin(newTheta);
+        x = radius * cos(newTheta);
         p.x = x;
         p.y = y;
-        p.z = (zmin + zmax)
+        p.z = zmin + zmax;
         p.w = 1;
+        p = Matrix_PointH_Multiply(rotateX, p);
         line_pipeline(p, draw);
         draw = true;
     }
-    // draw = false;
-    // for (int i = 0; i <= NSTEPS; i++)
-    // {
-    //     newTheta = (i / NSTEPS) * PI_2;
-    //     y = radius * sin(newTheta) + cos(newTheta);
-    //     x = radius * cos(newTheta);
-    //     p.x = x;
-    //     p.y = y;
-    //     p.z = (zmin + zmax);
-    //     p.w = 1;
-    //     line_pipeline(p, draw);
-    //     draw = true;
-    // }
+    draw = false;
+    for (int i = 0; i <= NSTEPS; i++)
+    {
+        newTheta = (i / NSTEPS) * PI_2;
+        y = radius * sin(newTheta);
+        x = radius * cos(newTheta);
+        p.x = x;
+        p.y = y;
+        p.z = zmin + zmax;
+        p.w = 1;
+        p = Matrix_PointH_Multiply(rotateY, p);
+        line_pipeline(p, draw);
+        draw = true;
+    }
+    return RD_OK;
+}
+
+int REDirect::rd_pointset(const string & vertex_type,int nvertex, const float * vertex) 
+{  	
+    float p[3]; 	 	
+    for(int i = 0; i < nvertex; i++) 	
+    { 	    
+        p[0]=vertex[i*3+0]; 		
+        p[1]=vertex[i*3+1]; 		
+        p[2]=vertex[i*3+2]; 		
+        rd_point(p); 	
+    } 	
+return RD_OK; 
+}
+int REDirect::rd_polyset(const string & vertex_type, int nvertex, const float * vertex, int nface, const int * face)
+{
+    float p[3];
+    int v[4];
+    PointH ph;
+    bool draw = false; 	 	
+    for(int i = 0; i < nface; i++) 	
+    { 	    
+ 		v[0] = face[i*4+0];
+        v[1] = face[i*4+1];
+        v[2] = face[i*4+2];
+        v[3] = face[i*4+0];
+        for (int j = 0; j < 4; j++)
+        {
+            p[0] = vertex[v[j]*3+0];
+            p[1] = vertex[v[j]*3+1];
+            p[2] = vertex[v[j]*3+2];
+            ph[0] = p[0];
+            ph[1] = p[1];
+            ph[2] = p[2];
+            ph[3] = 1;
+            line_pipeline(ph, draw);
+            draw = true;
+        }
+        draw = false;
+    } 
     return RD_OK;
 }

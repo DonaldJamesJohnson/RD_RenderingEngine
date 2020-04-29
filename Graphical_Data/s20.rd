@@ -3,7 +3,7 @@
 Display "PolySet"  "Screen" "rgbsingle"
 
 Format 640 480
-CameraFOV  45.0  # Degrees
+#CameraFOV  45.0  # Degrees
 
 ObjectBegin "Icosahedron"
 # Icosahedron
@@ -56,9 +56,9 @@ ObjectEnd # Icosahedron
 
 FrameBegin 1
 
-CameraEye  -5.0  -6.0  7.0
-CameraAt    1.0   1.0  1.0
-CameraUp    0.0   0.0  1.0
+CameraEye  0  0  7.0
+#CameraAt    1.0   1.0  1.0
+#CameraUp    0.0   0.0  1.0
 
 Clipping    1.0   1.0e+09
 

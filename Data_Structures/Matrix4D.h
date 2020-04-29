@@ -79,8 +79,8 @@ public:
 
     Matrix4D MakeRotationX(double t)
     {
-        double c = cos(t);
-        double s = sin(t);
+        double c = cos(t * (M_PI/180));
+        double s = sin(t * (M_PI/180));
         return (Matrix4D(1.0, 0.0, 0.0, 0.0,
                          0.0,   c,  -s, 0.0,
                          0.0,   s,   c, 0.0,
@@ -89,8 +89,8 @@ public:
 
     Matrix4D MakeRotationY(double t)
     {
-        double c = cos(t);
-        double s = sin(t);
+        double c = cos(t * (M_PI/180));
+        double s = sin(t * (M_PI/180));
         return (Matrix4D(  c, 0.0,   s, 0.0,
                          0.0, 1.0, 0.0, 0.0,
                           -s, 0.0,   c, 0.0,
@@ -99,8 +99,8 @@ public:
 
     Matrix4D MakeRotationZ(double t)
     {
-        double c = cos(t);
-        double s = sin(t);
+        double c = cos(t * (M_PI/180));
+        double s = sin(t * (M_PI/180));
         return (Matrix4D(  c,  -s, 0.0, 0.0,
                            s,   c, 0.0, 0.0,
                          0.0, 0.0, 1.0, 0.0,
@@ -119,15 +119,10 @@ public:
 
     Matrix4D world_to_camera(const Point& eye, const Point& at, const Vector3D& up)
     {
-        cout << "at: " << at.x << " " << at.y << " " << at.z << endl;
-        cout << "eye: " << eye.x << " " << eye.y << " " << eye.z << endl;
         Vector3D At = Point_Point_Subtract(at, eye).to_vector();
         At = Vector3D(At.Normalize());
-        cout << "AT: "  << At[0] << " " << At[1] << " " << At[2] << endl;
-        cout << "up: " << up.x << " " << up.y << " " << up.z << endl;
         Vector3D V = At.Cross(up);
         V = Vector3D(V.Normalize());
-        cout << "V: " << V.x << " " << V.y << " " << V.z << endl;
         Vector3D U = V.Cross(At);
         U = U.Normalize();
 
@@ -139,8 +134,8 @@ public:
 
     Matrix4D camera_to_clip(double fov, double near, double far, double width, double height)
     {
-        double tan_theta = tan((fov/2));
-        double aspect = width/height;
+        double tan_theta = tan((fov * (M_PI/180))/2);
+        double aspect = width / height;
 
         return (Matrix4D((0.5/(aspect * tan_theta)), 0.0 , 0.5, 0.0,
                          0.0, (0.5/tan_theta), 0.5, 0.0,
