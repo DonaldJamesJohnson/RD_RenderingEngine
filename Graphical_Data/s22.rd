@@ -2,7 +2,7 @@ Display "Cylinder Test" "Screen" "rgbdouble"
 
 Background 0.5 0.5 0.5
 
-CameraEye -20 -10 10
+CameraEye 0 -5 10
 CameraAt 1 -3 3
 CameraUp 0 0 1
 CameraFOV 30.0

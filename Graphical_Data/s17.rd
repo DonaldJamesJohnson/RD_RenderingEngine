@@ -8,7 +8,7 @@ FrameBegin 1
 # This provides a test of arbitrary camera viewpoint and change of field
 # of view
 
-CameraEye   -5.0 -6.0 7.0
+CameraEye   -2 1 10
 CameraAt    1.0 1.0 1.0
 CameraUp   0 0 1
 

@@ -443,7 +443,7 @@ int REDirect::rd_rotate_zx(float angle)
   
 int REDirect::rd_xform_push(void)
 {
-    Matrix4D push_trans = Matrix4D(currXform);
+    Matrix4D push_trans = currXform;
     xforms.push(push_trans);
     return RD_OK;
 }

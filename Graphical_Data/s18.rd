@@ -7,7 +7,7 @@ Format 640 480
 
 FrameBegin 1
 
-CameraEye   -5.0 -6.0 7.0
+CameraEye   -3 2 15
 CameraAt    1.0 1.0 1.0
 CameraUp   0 0 1
 
