@@ -543,25 +543,25 @@ int REDirect::point_pipeline(PointH& ph)
 
 int REDirect::line_pipeline(PointH ph, bool draw)
 {
+    std::cout << "Pre-Current_Transform: " << ph[0] << ", " << ph[1]  << ", " << ph[2]  << ", " << ph[3] << '\n' << std::endl;
     PointH ph_trans;
     ph_trans = Matrix_PointH_Multiply(currXform, ph);
-    std::cout << "Pre-DIVIDE BY W: " << ph_trans[0] << ", " << ph_trans[1]  << ", " << ph_trans[2]  << ", " << ph_trans[3] << '\n' << std::endl;
-    // ph_trans[0] = ph_trans[0];
-    // ph_trans[1] = ph_trans[1];
-    // ph_trans[2] = ph_trans[2];
-     //ph_trans[3] = 0;
-    std::cout << "DIVIDE BY W: " << ph_trans[0] << ", " << ph_trans[1]  << ", " << ph_trans[2]  << ", " << ph_trans[3] << '\n' << std::endl;
-    PointH finalPoint;
+    std::cout << "Pre-Final_Transform: " << ph_trans[0] << ", " << ph_trans[1]  << ", " << ph_trans[2]  << ", " << ph_trans[3] << '\n' << std::endl;
     std::cout << "Final Transform" << std::endl;
     std::cout << final_trans[0][0] << " " << final_trans[0][1] << " " << final_trans[0][2] << " " << final_trans[0][3] << std::endl;
     std::cout << final_trans[1][0] << " " << final_trans[1][1] << " " << final_trans[1][2] << " " << final_trans[1][3] << std::endl;
     std::cout << final_trans[2][0] << " " << final_trans[2][1] << " " << final_trans[2][2] << " " << final_trans[2][3] << std::endl;
     std::cout << final_trans[3][0] << " " << final_trans[3][1] << " " << final_trans[3][2] << " " << final_trans[3][3] << '\n' << std::endl;
+    PointH finalPoint;
     finalPoint = Matrix_PointH_Multiply(final_trans, ph_trans);
-    finalPoint[0] = finalPoint[0] / finalPoint[3];
-    finalPoint[1] = finalPoint[1] / finalPoint[3];
-    finalPoint[2] = finalPoint[2] / finalPoint[3];
-    std::cout << "DIVIDE BY W2: " << finalPoint[0] << ", " << finalPoint[1]  << ", " << finalPoint[2]  << ", " << finalPoint[3] << '\n' << std::endl;
+    std::cout << "Final Point: " << finalPoint[0] << ", " << finalPoint[1]  << ", " << finalPoint[2]  << ", " << finalPoint[3] << '\n' << std::endl;
+    if (finalPoint[3] != 0)
+    {
+        finalPoint[0] = finalPoint[0] / finalPoint[3];
+        finalPoint[1] = finalPoint[1] / finalPoint[3];
+        finalPoint[2] = finalPoint[2] / finalPoint[3];
+    std::cout << "DIVIDE BY W: " << finalPoint[0] << ", " << finalPoint[1]  << ", " << finalPoint[2]  << ", " << finalPoint[3] << '\n' << std::endl;
+    }
     if (!draw) point_store = finalPoint;
     else if (draw)
     {
@@ -573,7 +573,7 @@ int REDirect::line_pipeline(PointH ph, bool draw)
         end[0] = finalPoint[0];
         end[1] = finalPoint[1];
         end[2] = finalPoint[2];
-        cout << "DRAWING" << endl;
+        cout << "DRAWING LINE" << endl;
         cout << "start: " << start[0] << " " << start[1] << " " << start[2] << endl;
         cout << "end: " << end[0] << " " << end[1] << " " << end[2] << endl; 
         line(start, end);
@@ -584,48 +584,172 @@ int REDirect::line_pipeline(PointH ph, bool draw)
 
 int REDirect::rd_cube(void)
 {
-    PointH p1 = PointH(-1, -1, -1, 1);
-    PointH p2 = PointH(1, -1, -1, 1);
-    PointH p3 = PointH(1, 1, -1, 1);
-    PointH p4 = PointH(-1, 1, -1, 1);
-    PointH p5 = PointH(-1, -1, 1, 1);
-    PointH p6 = PointH(1, -1, 1, 1);
-    PointH p7 = PointH(1, 1, 1, 1);
-    PointH p8 = PointH(-1, 1, 1, 1);
+    PointH p1 = PointH(1, 1, -1, 1);
+    PointH p2 = PointH(-1, 1, -1, 1);
+    PointH p3 = PointH(-1, -1, -1, 1);
+    PointH p4 = PointH(1, -1, -1, 1);
+    PointH p5 = PointH(1, 1, 1, 1);
+    PointH p6 = PointH(-1, 1, 1, 1);
+    PointH p7 = PointH(-1, -1, 1, 1);
+    PointH p8 = PointH(1, -1, 1, 1);
     line_pipeline(p1, false);
     line_pipeline(p2, true);
-    // line_pipeline(p3, true);
-    // line_pipeline(p4, true);
-    // line_pipeline(p1, true);
-    // line_pipeline(p5, true);
-    // line_pipeline(p6, true);
-    // line_pipeline(p7, true);
-    // line_pipeline(p8, true);
-    // line_pipeline(p5, true);
-    // line_pipeline(p6, false);
-    // line_pipeline(p2, true);
-    // line_pipeline(p7, false);
-    // line_pipeline(p3, true);
-    // line_pipeline(p8, false);
-    // line_pipeline(p4, true);
+    line_pipeline(p3, true);
+    line_pipeline(p4, true);
+    line_pipeline(p1, true);
+    line_pipeline(p5, true);
+    line_pipeline(p6, true);
+    line_pipeline(p7, true);
+    line_pipeline(p8, true);
+    line_pipeline(p5, true);
+    line_pipeline(p6, false);
+    line_pipeline(p2, true);
+    line_pipeline(p7, false);
+    line_pipeline(p3, true);
+    line_pipeline(p8, false);
+    line_pipeline(p4, true);
 
     return RD_OK;
 }
 
 int REDirect::rd_disk(float height, float radius, float theta)
 {
-     return RD_OK;
+    float newTheta;
+    double PI_2 = 2 * M_PI;
+    float NSTEPS = 20;
+    bool draw = false;
+    float x;
+    float y;
+    PointH p;
+    for (int i = 0; i <= NSTEPS; i++)
+    {
+        newTheta = (i / NSTEPS) * PI_2;
+        y = radius * sin(newTheta);
+        x = radius * cos(newTheta);
+        p.x = x;
+        p.y = y;
+        p.z = height;
+        p.w = 1;
+        line_pipeline(p, draw);
+        draw = true;
+    }
+    return RD_OK;
 }
 
 int REDirect::rd_cylinder(float radius, float zmin, float zmax, float thetamax)
 {
- return RD_OK;
+    float newTheta;
+    double PI_2 = 2 * M_PI;
+    float NSTEPS = 50;
+    bool draw = false;
+    float x;
+    float y;
+    PointH p;
+    PointH p2;
+    for (int i = 0; i <= NSTEPS; i++)
+    {
+        newTheta = (i / NSTEPS) * PI_2;
+        y = radius * sin(newTheta);
+        x = radius * cos(newTheta);
+        p.x = x;
+        p.y = y;
+        p.z = zmin;
+        p.w = 1;
+        line_pipeline(p, draw);
+        draw = true;
+    }
+    draw = false;
+    for (int i = 0; i <= NSTEPS; i++)
+    {
+        newTheta = (i / NSTEPS) * PI_2;
+        y = radius * sin(newTheta);
+        x = radius * cos(newTheta);
+        p2.x = x;
+        p2.y = y;
+        p2.z = zmax;
+        p2.w = 1;
+        line_pipeline(p2, draw);
+        draw = true;
+    }
+    draw = false;
+    for (int i = 0; i <= NSTEPS; i++)
+    {
+        newTheta = (i / NSTEPS) * PI_2;
+        y = radius * sin(newTheta);
+        x = radius * cos(newTheta);
+        p.x = x;
+        p.y = y;
+        p.z = zmin;
+        p.w = 1;
+        p2.x = x;
+        p2.y = y;
+        p2.z = zmax;
+        p2.w = 1;
+        draw = false;
+        line_pipeline(p, draw);
+        draw = true;
+        line_pipeline(p2, draw);
+        draw = true;
+    }
+    return RD_OK;
 }
 
 int REDirect::rd_cone(float height, float radius, float thetamax)
 {
-    rd_disk(height, radius, thetamax);
-     return RD_OK;
+    float newTheta;
+    double PI_2 = 2 * M_PI;
+    float NSTEPS = 50;
+    bool draw = false;
+    float x;
+    float y;
+    PointH p;
+    PointH p2;
+    for (int i = 0; i <= NSTEPS; i++)
+    {
+        newTheta = (i / NSTEPS) * PI_2;
+        y = radius * sin(newTheta);
+        x = radius * cos(newTheta);
+        p.x = x;
+        p.y = y;
+        p.z = 0;
+        p.w = 1;
+        line_pipeline(p, draw);
+        draw = true;
+    }
+    draw = false;
+    for (int i = 0; i <= NSTEPS; i++)
+    {
+        newTheta = (i / NSTEPS) * PI_2;
+        y = radius * sin(newTheta);
+        x = radius * cos(newTheta);
+        p2.x = 0;
+        p2.y = 0;
+        p2.z = height;
+        p2.w = 1;
+        line_pipeline(p2, draw);
+        draw = true;
+    }
+    for (int i = 0; i <= NSTEPS; i++)
+    {
+        newTheta = (i / NSTEPS) * PI_2;
+        y = radius * sin(newTheta);
+        x = radius * cos(newTheta);
+        p.x = x;
+        p.y = y;
+        p.z = 0;
+        p.w = 1;
+        p2.x = 0;
+        p2.y = 0;
+        p2.z = height;
+        p2.w = 1;
+        draw = true;
+        line_pipeline(p, draw);
+        draw = false;
+        line_pipeline(p2, draw);
+        draw = true;
+    }
+    
+    return RD_OK;
 }
 
 

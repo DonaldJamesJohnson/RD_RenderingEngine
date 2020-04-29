@@ -2,6 +2,7 @@
 #define __VECTOR3D_H__
 
 #include "math.h"
+#include <iostream>
 
 struct Vector3D
 {

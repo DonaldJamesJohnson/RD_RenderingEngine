@@ -119,12 +119,15 @@ public:
 
     Matrix4D world_to_camera(const Point& eye, const Point& at, const Vector3D& up)
     {
+        cout << "at: " << at.x << " " << at.y << " " << at.z << endl;
+        cout << "eye: " << eye.x << " " << eye.y << " " << eye.z << endl;
         Vector3D At = Point_Point_Subtract(at, eye).to_vector();
         At = Vector3D(At.Normalize());
-
+        cout << "AT: "  << At[0] << " " << At[1] << " " << At[2] << endl;
+        cout << "up: " << up.x << " " << up.y << " " << up.z << endl;
         Vector3D V = At.Cross(up);
         V = Vector3D(V.Normalize());
-       
+        cout << "V: " << V.x << " " << V.y << " " << V.z << endl;
         Vector3D U = V.Cross(At);
         U = U.Normalize();
 
@@ -141,7 +144,7 @@ public:
 
         return (Matrix4D((0.5/(aspect * tan_theta)), 0.0 , 0.5, 0.0,
                          0.0, (0.5/tan_theta), 0.5, 0.0,
-                         0.0, 0.0, (far / (far-near)), (((far * near) * -1) / (far - near)),
+                         0.0, 0.0, (far / (far-near)), (-(far * near) / (far - near)),
                          0.0, 0.0, 1.0, 0.0));
     }
 

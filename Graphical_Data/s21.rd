@@ -5,7 +5,7 @@ Background 0.5 0.5 0.5
 CameraEye -20 -10 10
 CameraAt 1 -3 0
 CameraUp 0 0 1
-CameraFOV 30.0
+#CameraFOV 30.0
 
 FrameBegin 1
 WorldBegin
