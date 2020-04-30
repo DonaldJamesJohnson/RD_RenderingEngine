@@ -125,10 +125,28 @@ public:
         V = Vector3D(V.Normalize());
         Vector3D U = V.Cross(At);
         U = U.Normalize();
+        Point EYE = eye;
+        EYE.x = EYE.x * -1;
+        EYE.y = EYE.y * -1;
+        EYE.z = EYE.z * -1;
 
-        return (Matrix4D( V.x,  V.y,  V.z, -eye.x,
-                          U.x,  U.y,  U.z, -eye.y,
-                         At.x, At.y, At.z, -eye.z,
+        if (V.x == -0) V.x = 0;
+        if (V.y == -0) V.y = 0;
+        if (V.z == -0) V.z = 0;
+        if (U.x == -0) U.x = 0;
+        if (U.y == -0) U.y = 0;
+        if (U.z == -0) U.z = 0;
+        if (At.x == -0) At.x = 0;
+        if (At.y == -0) At.y = 0;
+        if (At.z == -0) At.z = 0;
+        if (EYE.x == -0) EYE.x = 0;
+        if (EYE.y == -0) EYE.y = 0;
+        if (EYE.z == -0) EYE.z = 0;
+
+
+        return (Matrix4D( V.x,  V.y,  V.z, EYE.x,
+                          U.x,  U.y,  U.z, EYE.y,
+                         At.x, At.y, At.z, EYE.z,
                           0.0,  0.0,  0.0, 1.0));
     }
 

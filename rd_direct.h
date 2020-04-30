@@ -81,6 +81,8 @@ public:
  int point_pipeline(PointH& ph);
 
  int line_pipeline(PointH ph, bool draw);
+
+ int Clip(PointH ph, bool flag);
 };
 
 #endif /* RD_ENGINE_DIRECT_H */
