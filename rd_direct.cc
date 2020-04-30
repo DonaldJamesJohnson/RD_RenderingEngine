@@ -491,59 +491,30 @@ int REDirect::rd_clipping(float znear, float zfar)
 
 int REDirect::point_pipeline(PointH& ph)
 {
-    std::cout << ph[0] << ", " << ph[1]  << ", " << ph[2]  << ", " << ph[3] << '\n' << std::endl;
-    std::cout << "Current Transform" << std::endl;
-    std::cout << currXform[0][0] << " " << currXform[0][1] << " " << currXform[0][2] << " " << currXform[0][3] << std::endl;
-    std::cout << currXform[1][0] << " " << currXform[1][1] << " " << currXform[1][2] << " " << currXform[1][3] << std::endl;
-    std::cout << currXform[2][0] << " " << currXform[2][1] << " " << currXform[2][2] << " " << currXform[2][3] << std::endl;
-    std::cout << currXform[3][0] << " " << currXform[3][1] << " " << currXform[3][2] << " " << currXform[3][3] << '\n' << std::endl;
     PointH ph_trans;
     ph_trans = Matrix_PointH_Multiply(currXform, ph);
-    std::cout << ph_trans[0] << ", " << ph_trans[1]  << ", " << ph_trans[2]  << ", " << ph_trans[3] << '\n' << std::endl;
-    ph_trans[0] = ph_trans[0] / ph_trans[3];
-    ph_trans[1] = ph_trans[1] / ph_trans[3];
-    ph_trans[2] = ph_trans[2] / ph_trans[3];
-    ph_trans[3] = 0;
-    std::cout << "DIVIDE BY W: " << ph_trans[0] << ", " << ph_trans[1]  << ", " << ph_trans[2]  << ", " << ph_trans[3] << '\n' << std::endl;
-    std::cout << "Final Transform" << std::endl;
-    std::cout << final_trans[0][0] << " " << final_trans[0][1] << " " << final_trans[0][2] << " " << final_trans[0][3] << std::endl;
-    std::cout << final_trans[1][0] << " " << final_trans[1][1] << " " << final_trans[1][2] << " " << final_trans[1][3] << std::endl;
-    std::cout << final_trans[2][0] << " " << final_trans[2][1] << " " << final_trans[2][2] << " " << final_trans[2][3] << std::endl;
-    std::cout << final_trans[3][0] << " " << final_trans[3][1] << " " << final_trans[3][2] << " " << final_trans[3][3] << '\n' << std::endl;
     PointH finalPoint;
     finalPoint = Matrix_PointH_Multiply(final_trans, ph_trans);
-    std::cout << finalPoint[0] << ", " << finalPoint[1]  << ", " << finalPoint[2]  << ", " << finalPoint[3] << std::endl;
     finalPoint[0] = finalPoint[0] / finalPoint[3];
     finalPoint[1] = finalPoint[1] / finalPoint[3];
     finalPoint[2] = finalPoint[2] / finalPoint[3];
     finalPoint[3] = 0;
-    std::cout << "DIVIDE BY W2: " << finalPoint[0] << ", " << finalPoint[1]  << ", " << finalPoint[2]  << ", " << finalPoint[3] << '\n' << std::endl;
     rd_write_pixel(finalPoint[0], finalPoint[1], redgreenblue);
-   // }
     return RD_OK;
 }
 
 int REDirect::line_pipeline(PointH ph, bool draw)
 {
-    std::cout << "Pre-Current_Transform: " << ph[0] << ", " << ph[1]  << ", " << ph[2]  << ", " << ph[3] << '\n' << std::endl;
     PointH ph_trans;
     ph_trans = Matrix_PointH_Multiply(currXform, ph);
-    std::cout << "Pre-Final_Transform: " << ph_trans[0] << ", " << ph_trans[1]  << ", " << ph_trans[2]  << ", " << ph_trans[3] << '\n' << std::endl;
-    std::cout << "Final Transform" << std::endl;
-    std::cout << final_trans[0][0] << " " << final_trans[0][1] << " " << final_trans[0][2] << " " << final_trans[0][3] << std::endl;
-    std::cout << final_trans[1][0] << " " << final_trans[1][1] << " " << final_trans[1][2] << " " << final_trans[1][3] << std::endl;
-    std::cout << final_trans[2][0] << " " << final_trans[2][1] << " " << final_trans[2][2] << " " << final_trans[2][3] << std::endl;
-    std::cout << final_trans[3][0] << " " << final_trans[3][1] << " " << final_trans[3][2] << " " << final_trans[3][3] << '\n' << std::endl;
     PointH finalPoint;
     finalPoint = Matrix_PointH_Multiply(final_trans, ph_trans);
-    std::cout << "Final Point: " << finalPoint[0] << ", " << finalPoint[1]  << ", " << finalPoint[2]  << ", " << finalPoint[3] << '\n' << std::endl;
     if (finalPoint[3] != 0)
     {
         finalPoint[0] = finalPoint[0] / finalPoint[3];
         finalPoint[1] = finalPoint[1] / finalPoint[3];
         finalPoint[2] = finalPoint[2] / finalPoint[3];
         finalPoint[3] = 0;
-        std::cout << "DIVIDE BY W: " << finalPoint[0] << ", " << finalPoint[1]  << ", " << finalPoint[2]  << ", " << finalPoint[3] << '\n' << std::endl;
     }
     if (!draw) point_store = finalPoint;
     else if (draw)
@@ -740,7 +711,7 @@ int REDirect::rd_sphere(float radius, float zmin, float zmax, float thetamax)
 {
     float newTheta;
     double PI_2 = 2 * M_PI;
-    float NSTEPS = thetamax;
+    float NSTEPS = 20;
     bool draw = false;
     float x;
     float y;
