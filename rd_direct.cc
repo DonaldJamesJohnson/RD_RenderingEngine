@@ -527,9 +527,6 @@ int REDirect::line_pipeline(PointH ph, bool draw)
         end[0] = finalPoint[0];
         end[1] = finalPoint[1];
         end[2] = finalPoint[2];
-        cout << "DRAWING LINE" << endl;
-        cout << "start: " << start[0] << " " << start[1] << " " << start[2] << endl;
-        cout << "end: " << end[0] << " " << end[1] << " " << end[2] << endl; 
         line(start, end);
         point_store = finalPoint;
     } 
