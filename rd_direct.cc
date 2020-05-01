@@ -25,7 +25,7 @@ Point cam_eye = Point(0,0,0);
 Point cam_look_at = Point(0,0,-1);
 Vector3D cam_up = Vector3D(0,1,0);
 PointH point_store;
-int BC0[6];
+double BC0[6];
 int Kode0;
 
 int REDirect::rd_display(const string & name, const string & type, const string & mode)
@@ -758,16 +758,40 @@ return RD_OK;
 int REDirect::rd_polyset(const string & vertex_type, int nvertex, const float * vertex, int nface, const int * face)
 {
     float p[3];
-    int v[4];
     PointH ph;
-    bool draw = false; 	 	
+    bool draw = false;
+    int size;
+    bool iterate = true;
+    for (int i = 0; i < nface; i++)
+    {
+        int j = 3;
+        int inc = 0;
+        int val;
+        while(iterate)
+        {
+            while (val != -1)
+            {
+                val = face[i * j + inc];
+                inc++;
+                size = inc;
+            }
+            iterate = false;
+        }
+    }
+    int v[size];		
     for(int i = 0; i < nface; i++) 	
-    { 	    
- 		v[0] = face[i*4+0];
-        v[1] = face[i*4+1];
-        v[2] = face[i*4+2];
-        v[3] = face[i*4+0];
-        for (int j = 0; j < 4; j++)
+    {
+        for (int k = 0; k < size-1; k++) 
+        {
+            v[k] = face[i*(size)+k];
+            //cout << "v: " << v[k] << endl;  
+        }
+        if ((face[i*size + (size-1)]) == -1) 
+        {
+            v[(size-1)] = v[0];
+            //cout << "v last: " << v[(size-1)] << endl;
+        }
+        for (int j = 0; j < size; j++)
         {
             p[0] = vertex[v[j]*3+0];
             p[1] = vertex[v[j]*3+1];
@@ -787,7 +811,7 @@ int REDirect::rd_polyset(const string & vertex_type, int nvertex, const float * 
 int REDirect::Clip(PointH ph_clip, bool draw)
 {
     int Kode1 = 0;
-    int BC1[6];
+    double BC1[6];
     int mask = 1;
     BC1[0] = ph_clip[0];
     BC1[1] = ph_clip[3] - ph_clip[0];
@@ -800,14 +824,9 @@ int REDirect::Clip(PointH ph_clip, bool draw)
     {
         if (BC1[i] < 0) Kode1 |= mask;
     }
-    PointH ph_device = Matrix_PointH_Multiply(clip_to_device, ph_clip);    
-    ph_device[0] = ph_device[0] / ph_device[3];
-    ph_device[1] = ph_device[1] / ph_device[3];
-    ph_device[2] = ph_device[2] / ph_device[3];
-    ph_device[3] = 0;
     if (!draw)
     {
-        if (Kode1 == 0) point_store = ph_device;
+        if (Kode1 == 0) point_store = ph_clip;
         
     } 
     else if (draw)
@@ -816,33 +835,81 @@ int REDirect::Clip(PointH ph_clip, bool draw)
         {
             if ((Kode0 | Kode1) == 0)
             {
+                PointH ph_device = Matrix_PointH_Multiply(clip_to_device, ph_clip);    
+                ph_device[0] = ph_device[0] / ph_device[3];
+                ph_device[1] = ph_device[1] / ph_device[3];
+                ph_device[2] = ph_device[2] / ph_device[3];
+                ph_device[3] = 0;
+                PointH ps_device = Matrix_PointH_Multiply(clip_to_device, point_store);    
+                ps_device[0] = ps_device[0] / ps_device[3];
+                ps_device[1] = ps_device[1] / ps_device[3];
+                ps_device[2] = ps_device[2] / ps_device[3];
+                ps_device[3] = 0;
                 float start[3];
                 float end[3];
-                start[0] = point_store[0];
-                start[1] = point_store[1];
-                start[2] = point_store[2];
+                start[0] = ps_device[0];
+                start[1] = ps_device[1];
+                start[2] = ps_device[2];
                 end[0] = ph_device[0];
                 end[1] = ph_device[1];
                 end[2] = ph_device[2];
-                cout << "DRAWING LINE" << endl;
-                cout << "start: " << start[0] << " " << start[1] << " " << start[2] << endl;
-                cout << "end: " << end[0] << " " << end[1] << " " << end[2] << endl; 
                 line(start, end);
-                point_store = ph_device;
+                point_store = ph_clip;
             }
             else 
             {
+                cout << "ELSE" << endl;
                 int Klip = (Kode0 | Kode1);
-                float a0 = 0.0;
-                float a1 = 1.0;
-               // for ()
+                double a0 = 0.0;
+                double a1 = 1.0;
+                double ax0 = (BC0[0] / (BC0[0] - BC1[0]));
+                double ax1 = (BC0[1] / (BC0[1] - BC1[1]));
+                double ay0 = (BC0[2] / (BC0[2] - BC1[2]));
+                double ay1 = (BC0[3] / (BC0[3] - BC1[3]));
+                PointH x0;
+                PointH x1; 
+                PointH y0;
+                PointH y1;
+                for (int i = 0; i < 4; i++)
+                {
+                    x0[i] = ph_clip[i] *= ax0;
+                    x1[i] = ph_clip[i] *= ax1;
+                    y0[i] = ph_clip[i] *= ay0;
+                    y1[0] = ph_clip[i] *= ay1; 
+                }
+
+                PointH x0_device = Matrix_PointH_Multiply(clip_to_device, x0);    
+                x0[0] = x0[0] / x0[3];
+                x0[1] = x0[1] / x0[3];
+                x0[2] = x0[2] / x0[3];
+                x0[3] = 0;
+                PointH x1_device = Matrix_PointH_Multiply(clip_to_device, x1);    
+                x1[0] = x1[0] / x1[3];
+                x1[1] = x1[1] / x1[3];
+                x1[2] = x1[2] / x1[3];
+                x1[3] = 0;
+                PointH y0_device = Matrix_PointH_Multiply(clip_to_device, y0);    
+                y0[0] = y0[0] / y0[3];
+                y0[1] = y0[1] / y0[3];
+                y0[2] = y0[2] / y0[3];
+                y0[3] = 0;
+                PointH y1_device = Matrix_PointH_Multiply(clip_to_device, y1);    
+                y1[0] = y1[0] / y1[3];
+                y1[1] = y1[1] / y1[3];
+                y1[2] = y1[2] / y1[3];
+                y1[3] = 0;
+
+                a0 = ax0;
+                a1 = ax1;
+
+                if (ax0 < ay0) a0 = ay0;
+                if (ax1 > ay0) a1 = ay1;
             }
         }
     } 
 
 
-    // point_store = ph_clip;
-    // for (int i = 0; i < 6; i++) BC0[i] = BC1[i];
-    // Kode0 = Kode1;
-
+    //  point_store = ph_clip;
+    //  for (int i = 0; i < 6; i++) BC0[i] = BC1[i];
+    //  Kode0 = Kode1;
 }
