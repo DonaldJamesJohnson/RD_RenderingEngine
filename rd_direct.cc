@@ -18,7 +18,6 @@ Matrix4D currXform;
 Matrix4D world_to_cam;
 Matrix4D cam_to_clip;
 Matrix4D clip_to_device;
-Matrix4D final_trans;
 double cam_fov = 90.0;
 double near_clip = 1.0;
 double far_clip = 1000000000.0;
@@ -26,6 +25,8 @@ Point cam_eye = Point(0,0,0);
 Point cam_look_at = Point(0,0,-1);
 Vector3D cam_up = Vector3D(0,1,0);
 PointH point_store;
+int BC0[6];
+int Kode0;
 
 int REDirect::rd_display(const string & name, const string & type, const string & mode)
 {
@@ -44,10 +45,9 @@ int REDirect::rd_world_begin(void)
     world_to_cam = world_to_cam.world_to_camera(cam_eye, cam_look_at, cam_up);
     cam_to_clip = cam_to_clip.camera_to_clip(cam_fov, near_clip, far_clip, display_xSize, display_ySize);
     clip_to_device = clip_to_device.clip_to_device(display_xSize, display_ySize);
-    final_trans = Matrix4D(Matrix_Matrix_Multiply(clip_to_device, cam_to_clip));
-    final_trans = Matrix_Matrix_Multiply(final_trans, world_to_cam);
     return RD_OK;
 }
+
 int REDirect::rd_world_end(void)
 {
     rd_disp_end_frame();
@@ -491,45 +491,24 @@ int REDirect::rd_clipping(float znear, float zfar)
 
 int REDirect::point_pipeline(PointH& ph)
 {
-    PointH ph_trans;
-    ph_trans = Matrix_PointH_Multiply(currXform, ph);
-    PointH finalPoint;
-    finalPoint = Matrix_PointH_Multiply(final_trans, ph_trans);
-    finalPoint[0] = finalPoint[0] / finalPoint[3];
-    finalPoint[1] = finalPoint[1] / finalPoint[3];
-    finalPoint[2] = finalPoint[2] / finalPoint[3];
-    finalPoint[3] = 0;
-    rd_write_pixel(finalPoint[0], finalPoint[1], redgreenblue);
+    PointH ph_trans = Matrix_PointH_Multiply(currXform, ph);
+    PointH ph_cam = Matrix_PointH_Multiply(world_to_cam, ph_trans);
+    PointH ph_clip = Matrix_PointH_Multiply(cam_to_clip, ph_cam);
+    PointH ph_device = Matrix_PointH_Multiply(clip_to_device, ph_clip);    
+    ph_device[0] = ph_device[0] / ph_device[3];
+    ph_device[1] = ph_device[1] / ph_device[3];
+    ph_device[2] = ph_device[2] / ph_device[3];
+    ph_device[3] = 0;
+    rd_write_pixel(ph_device[0], ph_device[1], redgreenblue);
     return RD_OK;
 }
 
 int REDirect::line_pipeline(PointH ph, bool draw)
 {
-    PointH ph_trans;
-    ph_trans = Matrix_PointH_Multiply(currXform, ph);
-    PointH finalPoint;
-    finalPoint = Matrix_PointH_Multiply(final_trans, ph_trans);
-    if (finalPoint[3] != 0)
-    {
-        finalPoint[0] = finalPoint[0] / finalPoint[3];
-        finalPoint[1] = finalPoint[1] / finalPoint[3];
-        finalPoint[2] = finalPoint[2] / finalPoint[3];
-        finalPoint[3] = 0;
-    }
-    if (!draw) point_store = finalPoint;
-    else if (draw)
-    {
-        float start[3];
-        float end[3];
-        start[0] = point_store[0];
-        start[1] = point_store[1];
-        start[2] = point_store[2];
-        end[0] = finalPoint[0];
-        end[1] = finalPoint[1];
-        end[2] = finalPoint[2];
-        line(start, end);
-        point_store = finalPoint;
-    } 
+    PointH ph_trans = Matrix_PointH_Multiply(currXform, ph);
+    PointH ph_cam = Matrix_PointH_Multiply(world_to_cam, ph_trans);
+    PointH ph_clip = Matrix_PointH_Multiply(cam_to_clip, ph_cam);
+    Clip(ph_clip, draw);
     return RD_OK;
 }
 
@@ -803,4 +782,67 @@ int REDirect::rd_polyset(const string & vertex_type, int nvertex, const float * 
         draw = false;
     } 
     return RD_OK;
+}
+
+int REDirect::Clip(PointH ph_clip, bool draw)
+{
+    int Kode1 = 0;
+    int BC1[6];
+    int mask = 1;
+    BC1[0] = ph_clip[0];
+    BC1[1] = ph_clip[3] - ph_clip[0];
+    BC1[2] = ph_clip[1];
+    BC1[3] = ph_clip[3] - ph_clip[1];
+    BC1[4] = ph_clip[2];
+    BC1[5] = ph_clip[3] - ph_clip[2];
+
+    for (int i = 0; i < 6; i++)
+    {
+        if (BC1[i] < 0) Kode1 |= mask;
+    }
+    PointH ph_device = Matrix_PointH_Multiply(clip_to_device, ph_clip);    
+    ph_device[0] = ph_device[0] / ph_device[3];
+    ph_device[1] = ph_device[1] / ph_device[3];
+    ph_device[2] = ph_device[2] / ph_device[3];
+    ph_device[3] = 0;
+    if (!draw)
+    {
+        if (Kode1 == 0) point_store = ph_device;
+        
+    } 
+    else if (draw)
+    {
+        if ((Kode0 & Kode1) == 0)
+        {
+            if ((Kode0 | Kode1) == 0)
+            {
+                float start[3];
+                float end[3];
+                start[0] = point_store[0];
+                start[1] = point_store[1];
+                start[2] = point_store[2];
+                end[0] = ph_device[0];
+                end[1] = ph_device[1];
+                end[2] = ph_device[2];
+                cout << "DRAWING LINE" << endl;
+                cout << "start: " << start[0] << " " << start[1] << " " << start[2] << endl;
+                cout << "end: " << end[0] << " " << end[1] << " " << end[2] << endl; 
+                line(start, end);
+                point_store = ph_device;
+            }
+            else 
+            {
+                int Klip = (Kode0 | Kode1);
+                float a0 = 0.0;
+                float a1 = 1.0;
+               // for ()
+            }
+        }
+    } 
+
+
+    // point_store = ph_clip;
+    // for (int i = 0; i < 6; i++) BC0[i] = BC1[i];
+    // Kode0 = Kode1;
+
 }
