@@ -2,8 +2,8 @@ Display "Sphere Test" "Screen" "rgbdouble"
 
 Background 0.5 0.5 0.5
 
-CameraEye -5 10 20
-CameraAt 0 0 0
+CameraEye -10 -20 10
+CameraAt 3 0 0
 CameraUp 0 0 1
 CameraFOV 30.0
 
