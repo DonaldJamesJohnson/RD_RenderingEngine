@@ -7,7 +7,7 @@ CameraFOV  45.0  # Degrees
 
 FrameBegin 1
 
-CameraEye   0     0     18
+CameraEye   0     0    15.8
 CameraAt    1.0   1.0  1.0
 CameraUp    0.0   0.0  1.0
 
@@ -17,7 +17,7 @@ Clipping    1.0   1.0e+09
 WorldBegin
 
 Color 1 0 0 
-Translate 4 0 0
+Translate 5 0 0
 Rotate "Y" 60
 
 Cone 5 1 300
