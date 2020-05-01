@@ -628,7 +628,7 @@ int REDirect::rd_cone(float height, float radius, float thetamax)
 {
     float newTheta;
     double PI_2 = 2 * M_PI;
-    float NSTEPS = 50;
+    float NSTEPS = thetamax / 10;
     bool draw = false;
     float x;
     float y;
@@ -687,7 +687,7 @@ int REDirect::rd_sphere(float radius, float zmin, float zmax, float thetamax)
 {
     float newTheta;
     double PI_2 = 2 * M_PI;
-    float NSTEPS = 20;
+    float NSTEPS = thetamax / 20;
     bool draw = false;
     float x;
     float y;
