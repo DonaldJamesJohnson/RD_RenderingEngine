@@ -7,7 +7,9 @@
 #include "Data_Structures/PointH.h"
 #include "Data_Structures/Matrix4D.h"
 #include <stack>
+#include <vector>
 using std::stack;
+using std::vector;
 using namespace std;
 
 
@@ -27,6 +29,9 @@ Vector3D cam_up = Vector3D(0,1,0);
 PointH point_store;
 double BC0[6];
 int Kode0;
+//int * zBuffer;
+//bool zBuffAlloc = false;
+vector< vector<float> > zBuffer (display_xSize, vector<float>(display_ySize));
 
 int REDirect::rd_display(const string & name, const string & type, const string & mode)
 {
@@ -45,6 +50,19 @@ int REDirect::rd_world_begin(void)
     world_to_cam = world_to_cam.world_to_camera(cam_eye, cam_look_at, cam_up);
     cam_to_clip = cam_to_clip.camera_to_clip(cam_fov, near_clip, far_clip, display_xSize, display_ySize);
     clip_to_device = clip_to_device.clip_to_device(display_xSize, display_ySize);
+    // if (!zBuffAlloc) 
+    // {
+    //     zBuffer = new int [display_xSize * display_ySize * 2];
+    //     zBuffAlloc = true;
+    // }
+    for (int i = 0; i < display_xSize; i++)
+    {
+        for (int j = 0; j < display_ySize; j++)
+        {
+            //zBuffer[i * j + j] = 1.0;
+            zBuffer[i][j] = 1.0;
+        }
+    }
     return RD_OK;
 }
 
@@ -73,6 +91,7 @@ int REDirect::rd_render_init(void)
 
 int REDirect::rd_render_cleanup(void)
 {
+    //delete zBuffer;
     return RD_OK;
 }
 
@@ -454,7 +473,6 @@ int REDirect::rd_xform_pop(void)
     return RD_OK;
 }
 
-
 int REDirect::rd_camera_eye(const float eyepoint[3])
 {
     cam_eye[0] = eyepoint[0];
@@ -499,7 +517,7 @@ int REDirect::point_pipeline(PointH& ph)
     ph_device[1] = ph_device[1] / ph_device[3];
     ph_device[2] = ph_device[2] / ph_device[3];
     ph_device[3] = 0;
-    rd_write_pixel(ph_device[0], ph_device[1], redgreenblue);
+    zBuff_write_pixel(ph_device[0], ph_device[1], ph_device[2]);
     return RD_OK;
 }
 
@@ -509,6 +527,52 @@ int REDirect::line_pipeline(PointH ph, bool draw)
     PointH ph_cam = Matrix_PointH_Multiply(world_to_cam, ph_trans);
     PointH ph_clip = Matrix_PointH_Multiply(cam_to_clip, ph_cam);
     Clip(ph_clip, draw);
+    return RD_OK;
+}
+
+int REDirect::DDA_Line(const float start[3], const float end[3])
+{
+    int x0 = (int)start[0];
+    int y0 = (int)start[1];
+    float z0 = start[2];
+    int x1 = (int)end[0];
+    int y1 = (int)end[1];
+    float z1 = end[2];
+    float x = x0;
+    float y = y0;
+    float z = z0;
+    int NSTEPS;
+    float dx = x1 - x0;
+    float dy = y1 - y0;
+    float dz = z1 - z0;
+
+    if (abs(dy) > abs(dx)) NSTEPS = abs(dy);
+    else NSTEPS = abs(dx);
+    dx /= NSTEPS;
+    dy /= NSTEPS;
+    dz /= NSTEPS;
+    for (int i = 0; i < NSTEPS; i++)
+    {
+        zBuff_write_pixel(x, y, z);
+        x += dx;
+        y += dy;
+        z += dz;
+    }
+
+}
+
+int REDirect::zBuff_write_pixel(float x, float y, float z)
+{
+    // if (z < zBuffer[(int)x*(int)y + (int)y])
+    // {
+    //     rd_write_pixel(x, y, redgreenblue);
+    //     zBuffer[(int)x*(int)y + (int)y] = z;
+    // }
+    if (z < zBuffer[x][y])
+    {
+        rd_write_pixel(x, y, redgreenblue);
+        zBuffer[x][y] = z;
+    }
     return RD_OK;
 }
 
@@ -685,60 +749,65 @@ int REDirect::rd_cone(float height, float radius, float thetamax)
 
 int REDirect::rd_sphere(float radius, float zmin, float zmax, float thetamax)
 {
-    float newTheta;
-    double PI_2 = 2 * M_PI;
-    float NSTEPS = thetamax / 20;
-    bool draw = false;
-    float x;
-    float y;
+    double theta;
+    double phi;
+    double x, y, z;
+    double radians = (M_PI/180);
+    int NSTEPS = 20;
+    int NSTEPSX = 10;
     PointH p;
-    Matrix4D rotateX;
-    Matrix4D rotateY;
-    Matrix4D rotateZ;
-    rotateX = rotateX.MakeRotationX(90);
-    rotateY = rotateY.MakeRotationY(-90);
-    rotateZ = rotateZ.MakeRotationZ(90);
-
-    for (int i = 0; i <= NSTEPS; i++)
+    
+    for (int j = 0; j < NSTEPS; j++)
     {
-        newTheta = (i / NSTEPS) * PI_2;
-        y = radius * sin(newTheta);
-        x = radius * cos(newTheta);
-        p.x = x;
-        p.y = y;
-        p.z = zmin + zmax;
-        p.w = 1;
-        p = Matrix_PointH_Multiply(rotateZ, p);
-        line_pipeline(p, draw);
-        draw = true;
-    }
-    draw = false;
-    for (int i = 0; i <= NSTEPS; i++)
-    {
-        newTheta = (i / NSTEPS) * PI_2;
-        y = radius * sin(newTheta);
-        x = radius * cos(newTheta);
-        p.x = x;
-        p.y = y;
-        p.z = zmin + zmax;
-        p.w = 1;
-        p = Matrix_PointH_Multiply(rotateX, p);
-        line_pipeline(p, draw);
-        draw = true;
-    }
-    draw = false;
-    for (int i = 0; i <= NSTEPS; i++)
-    {
-        newTheta = (i / NSTEPS) * PI_2;
-        y = radius * sin(newTheta);
-        x = radius * cos(newTheta);
-        p.x = x;
-        p.y = y;
-        p.z = zmin + zmax;
-        p.w = 1;
-        p = Matrix_PointH_Multiply(rotateY, p);
-        line_pipeline(p, draw);
-        draw = true;
+        for (int i = 0; i < NSTEPSX; i++)
+        {
+            theta = double(((double(i)/NSTEPSX))*(360));
+            phi = double(((double(j)/NSTEPS)*180)-90);
+            x = radius * cos(theta * radians) * cos(phi * radians);
+            y = radius * sin(theta * radians) * cos(phi * radians);
+            z = radius * sin(phi * radians);
+            p[0] = x; 
+            p[1] = y; 
+            p[2] = z; 
+            p[3] = 1;
+            line_pipeline(p, false);
+            theta = double(((double(i+1)/NSTEPSX))*(360));
+            x = radius * cos(theta * radians) * cos(phi * radians);
+            y = radius * sin(theta * radians) * cos(phi * radians);
+            z = radius * sin(phi * radians);
+            p[0] = x; 
+            p[1] = y; 
+            p[2] = z; 
+            p[3] = 1;
+            line_pipeline(p, true);
+            phi = double(((double(j+1)/NSTEPS)*180)-90);
+            x = radius * cos(theta * radians) * cos(phi * radians);
+            y = radius * sin(theta * radians) * cos(phi * radians);
+            z = radius * sin(phi * radians);
+            p[0] = x; 
+            p[1] = y; 
+            p[2] = z; 
+            p[3] = 1;
+            line_pipeline(p, true);
+            theta = double(((double(i)/NSTEPSX))*(360));
+            x = radius * cos(theta * radians) * cos(phi * radians);
+            y = radius * sin(theta * radians) * cos(phi * radians);
+            z = radius * sin(phi * radians);
+            p[0] = x; 
+            p[1] = y; 
+            p[2] = z; 
+            p[3] = 1;
+            line_pipeline(p, true);
+            phi = double(((double(j)/NSTEPS)*180)-90);
+            x = radius * cos(theta * radians) * cos(phi * radians);
+            y = radius * sin(theta * radians) * cos(phi * radians);
+            z = radius * sin(phi * radians);
+            p[0] = x; 
+            p[1] = y; 
+            p[2] = z; 
+            p[3] = 1;
+            line_pipeline(p, true);
+        }
     }
     return RD_OK;
 }
@@ -808,108 +877,106 @@ int REDirect::rd_polyset(const string & vertex_type, int nvertex, const float * 
     return RD_OK;
 }
 
-int REDirect::Clip(PointH ph_clip, bool draw)
+int REDirect::Clip(PointH p1, bool draw)
 {
     int Kode1 = 0;
     double BC1[6];
     int mask = 1;
-    BC1[0] = ph_clip[0];
-    BC1[1] = ph_clip[3] - ph_clip[0];
-    BC1[2] = ph_clip[1];
-    BC1[3] = ph_clip[3] - ph_clip[1];
-    BC1[4] = ph_clip[2];
-    BC1[5] = ph_clip[3] - ph_clip[2];
 
-    for (int i = 0; i < 6; i++)
+    // To match Blinn's notation...
+    PointH p0 = point_store;
+
+    // Calculate BC1
+    BC1[0] = p1[0];
+    BC1[1] = p1[3] - p1[0];
+    BC1[2] = p1[1];
+    BC1[3] = p1[3] - p1[1];
+    BC1[4] = p1[2];
+    BC1[5] = p1[3] - p1[2];
+    // Calculate Kode1
+    for (int i = 0; i < 6; i++, mask<<=1)
     {
         if (BC1[i] < 0) Kode1 |= mask;
     }
-    if (!draw)
+    
+    if (draw)
     {
-        if (Kode1 == 0) point_store = ph_clip;
-        
-    } 
-    else if (draw)
-    {
+        //cout << "Kode0 & Kode1: " << (Kode0 & Kode1) << endl;
         if ((Kode0 & Kode1) == 0)
         {
+            //cout << "Kode0 | Kode1: " << (Kode0 | Kode1) << endl;
             if ((Kode0 | Kode1) == 0)
             {
-                PointH ph_device = Matrix_PointH_Multiply(clip_to_device, ph_clip);    
-                ph_device[0] = ph_device[0] / ph_device[3];
-                ph_device[1] = ph_device[1] / ph_device[3];
-                ph_device[2] = ph_device[2] / ph_device[3];
-                ph_device[3] = 0;
-                PointH ps_device = Matrix_PointH_Multiply(clip_to_device, point_store);    
-                ps_device[0] = ps_device[0] / ps_device[3];
-                ps_device[1] = ps_device[1] / ps_device[3];
-                ps_device[2] = ps_device[2] / ps_device[3];
-                ps_device[3] = 0;
+                PointH p0_device = Matrix_PointH_Multiply(clip_to_device, p0);    
+                p0_device[0] = p0_device[0] / p0_device[3];
+                p0_device[1] = p0_device[1] / p0_device[3];
+                p0_device[2] = p0_device[2] / p0_device[3];
+                p0_device[3] = 1;
+                PointH p1_device = Matrix_PointH_Multiply(clip_to_device, p1);    
+                p1_device[0] = p1_device[0] / p1_device[3];
+                p1_device[1] = p1_device[1] / p1_device[3];
+                p1_device[2] = p1_device[2] / p1_device[3];
+                p1_device[3] = 1;
+
                 float start[3];
                 float end[3];
-                start[0] = ps_device[0];
-                start[1] = ps_device[1];
-                start[2] = ps_device[2];
-                end[0] = ph_device[0];
-                end[1] = ph_device[1];
-                end[2] = ph_device[2];
-                line(start, end);
-                point_store = ph_clip;
+                start[0] = p0_device[0];
+                start[1] = p0_device[1];
+                start[2] = p0_device[2];
+                end[0] = p1_device[0];
+                end[1] = p1_device[1];
+                end[2] = p1_device[2];
+                DDA_Line(start, end);
             }
             else 
             {
-                cout << "ELSE" << endl;
                 int Klip = (Kode0 | Kode1);
-                double a0 = 0.0;
-                double a1 = 1.0;
-                double ax0 = (BC0[0] / (BC0[0] - BC1[0]));
-                double ax1 = (BC0[1] / (BC0[1] - BC1[1]));
-                double ay0 = (BC0[2] / (BC0[2] - BC1[2]));
-                double ay1 = (BC0[3] / (BC0[3] - BC1[3]));
-                PointH x0;
-                PointH x1; 
-                PointH y0;
-                PointH y1;
-                for (int i = 0; i < 4; i++)
+                double amin = 0.0;
+                double amax = 1.0;
+                mask = 1;
+                bool nonTrivReject = false;
+                for (int i = 0; i < 6; i++, mask<<=1)
                 {
-                    x0[i] = ph_clip[i] *= ax0;
-                    x1[i] = ph_clip[i] *= ax1;
-                    y0[i] = ph_clip[i] *= ay0;
-                    y1[0] = ph_clip[i] *= ay1; 
+                    if ((Klip & mask) != 0)
+                    {
+                        double a = (BC0[i] / (BC0[i] - BC1[i]));                      
+                        if ((Kode0 & mask) != 0)
+                        {
+                            amin = max(amin, a);
+                        }
+                        else 
+                        {
+                            amax = min(amax, a);
+                        }
+                        if (amax < amin) 
+                        {
+                            nonTrivReject = true;
+                            break;
+                        }
+                    }                   
                 }
+                if (!nonTrivReject)
+                {
+                    PointH p_draw;
+                    for (int i = 0; i < 4; i++)
+                    {
+                        p_draw[i] = p0[i] + (amin * (p0[i] - p1[i]));
+                    }
+                    Clip(p_draw, false);
 
-                PointH x0_device = Matrix_PointH_Multiply(clip_to_device, x0);    
-                x0[0] = x0[0] / x0[3];
-                x0[1] = x0[1] / x0[3];
-                x0[2] = x0[2] / x0[3];
-                x0[3] = 0;
-                PointH x1_device = Matrix_PointH_Multiply(clip_to_device, x1);    
-                x1[0] = x1[0] / x1[3];
-                x1[1] = x1[1] / x1[3];
-                x1[2] = x1[2] / x1[3];
-                x1[3] = 0;
-                PointH y0_device = Matrix_PointH_Multiply(clip_to_device, y0);    
-                y0[0] = y0[0] / y0[3];
-                y0[1] = y0[1] / y0[3];
-                y0[2] = y0[2] / y0[3];
-                y0[3] = 0;
-                PointH y1_device = Matrix_PointH_Multiply(clip_to_device, y1);    
-                y1[0] = y1[0] / y1[3];
-                y1[1] = y1[1] / y1[3];
-                y1[2] = y1[2] / y1[3];
-                y1[3] = 0;
-
-                a0 = ax0;
-                a1 = ax1;
-
-                if (ax0 < ay0) a0 = ay0;
-                if (ax1 > ay0) a1 = ay1;
+                    PointH p_draw2;
+                        for (int i = 0; i < 4; i++)
+                        {
+                            p_draw2[i] = p0[i] + (amax * (p0[i] - p1[i]));
+                        }
+                        Clip(p_draw2, true);
+                }                
             }
         }
     } 
+    point_store = p1;
+    for (int i = 0; i < 6; i++) BC0[i] = BC1[i];
+    Kode0 = Kode1;
 
-
-    //  point_store = ph_clip;
-    //  for (int i = 0; i < 6; i++) BC0[i] = BC1[i];
-    //  Kode0 = Kode1;
+    return RD_OK;
 }

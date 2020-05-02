@@ -1,6 +1,6 @@
 # This is a test/example rd file
 
-Display "LineClipY"  "PNM" "rgb"
+Display "LineClipY"  "Screen" "rgbsingle"
 Format 640 480
 
 

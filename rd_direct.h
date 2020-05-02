@@ -82,6 +82,9 @@ public:
 
  int line_pipeline(PointH ph, bool draw);
  int Clip(PointH ph_clip, bool draw);
+
+ int zBuff_write_pixel(float x, float y, float z);
+ int DDA_Line(const float start[3], const float end[3]);
 };
 
 #endif /* RD_ENGINE_DIRECT_H */
