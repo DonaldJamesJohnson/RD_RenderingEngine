@@ -12,7 +12,6 @@ using std::stack;
 using std::vector;
 using namespace std;
 
-
 int frameNumber;
 float redgreenblue[3] = {1.0, 1.0, 1.0};
 stack<Matrix4D> xforms;
@@ -29,9 +28,9 @@ Vector3D cam_up = Vector3D(0,1,0);
 PointH point_store;
 double BC0[6];
 int Kode0;
-//int * zBuffer;
-//bool zBuffAlloc = false;
 vector< vector<float> > zBuffer (display_xSize, vector<float>(display_ySize));
+Edge * ET[480];
+Edge * AET;
 
 int REDirect::rd_display(const string & name, const string & type, const string & mode)
 {
@@ -50,19 +49,16 @@ int REDirect::rd_world_begin(void)
     world_to_cam = world_to_cam.world_to_camera(cam_eye, cam_look_at, cam_up);
     cam_to_clip = cam_to_clip.camera_to_clip(cam_fov, near_clip, far_clip, display_xSize, display_ySize);
     clip_to_device = clip_to_device.clip_to_device(display_xSize, display_ySize);
-    // if (!zBuffAlloc) 
-    // {
-    //     zBuffer = new int [display_xSize * display_ySize * 2];
-    //     zBuffAlloc = true;
-    // }
     for (int i = 0; i < display_xSize; i++)
     {
         for (int j = 0; j < display_ySize; j++)
         {
-            //zBuffer[i * j + j] = 1.0;
             zBuffer[i][j] = 1.0;
         }
     }
+    for (int i =0;i<display_ySize;i++) ET[i] = new Edge; 		
+    for (int i =0;i<display_ySize;i++) ET[i]->next = NULL; 
+
     return RD_OK;
 }
 
@@ -530,6 +526,79 @@ int REDirect::line_pipeline(PointH ph, bool draw)
     return RD_OK;
 }
 
+int REDirect::poly_pipeline(attr_point p, int end_flag)
+{
+    PointH geom, norm;
+    PointH dev;
+
+    const int MAX_VERTEX_LIST_SIZE = 50;
+    static attr_point  vertex_list[MAX_VERTEX_LIST_SIZE];
+    static attr_point  clipped_list[MAX_VERTEX_LIST_SIZE];
+    static int n_vertex = 0;
+
+    int i;
+
+    // Run geometry through current transform
+    geom[0] = p.coord[0];
+    geom[1] = p.coord[1];
+    geom[2] = p.coord[2];
+    geom[3] = p.coord[3];
+
+    geom = Matrix_PointH_Multiply(currXform, geom);
+
+    // Run through world to clip
+    geom = Matrix_PointH_Multiply(world_to_cam, geom);
+    geom = Matrix_PointH_Multiply(cam_to_clip, geom);
+
+    p.coord[0] = geom[0];
+    p.coord[1] = geom[1];
+    p.coord[2] = geom[2];
+    p.coord[3] = geom[3];
+
+    // Store in vertex list
+    if( n_vertex == MAX_VERTEX_LIST_SIZE)
+    return -1;  // Overflow
+
+    vertex_list[n_vertex] = p;
+    n_vertex++;
+
+    if(end_flag == false)  // Move along to the next vertex
+    return 0;
+
+  if((n_vertex = poly_clip(n_vertex, vertex_list, clipped_list)))
+    {
+      // There's something left! --- Let's draw it
+
+      // Pre process vertex list
+      for(i = 0; i < n_vertex; i++)
+	{
+	  // Convert geometry to device coordinates
+	  dev[0] = clipped_list[i].coord[0];
+	  dev[1] = clipped_list[i].coord[1];
+	  dev[2] = clipped_list[i].coord[2];
+	  dev[3] = clipped_list[i].coord[3];
+	  dev = Matrix_PointH_Multiply(clip_to_device, dev);
+	  
+	  clipped_list[i].coord[0] = dev[0];
+	  clipped_list[i].coord[1] = dev[1];
+	  // clipped_list[i].coord[2] = dev[2];  // Superfluous
+	  // clipped_list[i].coord[3] = dev[3];
+
+	  // Divide geometry by w.
+	  clipped_list[i].coord[0] /= clipped_list[i].coord[3];
+	  clipped_list[i].coord[1] /= clipped_list[i].coord[3];
+	  clipped_list[i].coord[2] /= clipped_list[i].coord[3];
+
+	}
+
+      scan_convert(clipped_list, n_vertex);
+    }
+
+  // Reset structures for next polygon
+
+  n_vertex = 0;
+}
+
 int REDirect::DDA_Line(const float start[3], const float end[3])
 {
     int x0 = (int)start[0];
@@ -563,11 +632,6 @@ int REDirect::DDA_Line(const float start[3], const float end[3])
 
 int REDirect::zBuff_write_pixel(float x, float y, float z)
 {
-    // if (z < zBuffer[(int)x*(int)y + (int)y])
-    // {
-    //     rd_write_pixel(x, y, redgreenblue);
-    //     zBuffer[(int)x*(int)y + (int)y] = z;
-    // }
     if (z < zBuffer[x][y])
     {
         rd_write_pixel(x, y, redgreenblue);
@@ -578,30 +642,50 @@ int REDirect::zBuff_write_pixel(float x, float y, float z)
 
 int REDirect::rd_cube(void)
 {
-    PointH p1 = PointH(1, 1, -1, 1);
-    PointH p2 = PointH(-1, 1, -1, 1);
-    PointH p3 = PointH(-1, -1, -1, 1);
-    PointH p4 = PointH(1, -1, -1, 1);
-    PointH p5 = PointH(1, 1, 1, 1);
-    PointH p6 = PointH(-1, 1, 1, 1);
-    PointH p7 = PointH(-1, -1, 1, 1);
-    PointH p8 = PointH(1, -1, 1, 1);
-    line_pipeline(p1, false);
-    line_pipeline(p2, true);
-    line_pipeline(p3, true);
-    line_pipeline(p4, true);
-    line_pipeline(p1, true);
-    line_pipeline(p5, true);
-    line_pipeline(p6, true);
-    line_pipeline(p7, true);
-    line_pipeline(p8, true);
-    line_pipeline(p5, true);
-    line_pipeline(p6, false);
-    line_pipeline(p2, true);
-    line_pipeline(p7, false);
-    line_pipeline(p3, true);
-    line_pipeline(p8, false);
-    line_pipeline(p4, true);
+    PointH p1 = PointH(-1, -1, -1, 1);
+    attr_point ap1;
+    ap1.coord[0] = p1[0];
+    ap1.coord[1] = p1[1];
+    ap1.coord[2] = p1[2];
+    ap1.coord[3] = p1[3];
+    PointH p2 = PointH(1, -1, -1, 1);
+    attr_point ap2;
+    ap2.coord[0] = p2[0];
+    ap2.coord[1] = p2[1];
+    ap2.coord[2] = p2[2];
+    ap2.coord[3] = p2[3];
+    PointH p3 = PointH(1, 1, -1, 1);
+    attr_point ap3;
+    ap3.coord[0] = p3[0];
+    ap3.coord[1] = p3[1];
+    ap3.coord[2] = p3[2];
+    ap3.coord[3] = p3[3];
+    PointH p4 = PointH(-1, 1, -1, 1);
+    attr_point ap4;
+    ap4.coord[0] = p4[0];
+    ap4.coord[1] = p4[1];
+    ap4.coord[2] = p4[2];
+    ap4.coord[3] = p4[3];
+    // PointH p5 = PointH(1, 1, 1, 1);
+    // PointH p6 = PointH(-1, 1, 1, 1);
+    // PointH p7 = PointH(-1, -1, 1, 1);
+    // PointH p8 = PointH(1, -1, 1, 1);
+    poly_pipeline(ap1, false);
+    poly_pipeline(ap2, false);
+    poly_pipeline(ap3, false);
+    poly_pipeline(ap4, true);
+    // line_pipeline(p1, true);
+    // line_pipeline(p5, true);
+    // line_pipeline(p6, true);
+    // line_pipeline(p7, true);
+    // line_pipeline(p8, true);
+    // line_pipeline(p5, true);
+    // line_pipeline(p6, false);
+    // line_pipeline(p2, true);
+    // line_pipeline(p7, false);
+    // line_pipeline(p3, true);
+    // line_pipeline(p8, false);
+    // line_pipeline(p4, true);
 
     return RD_OK;
 }
@@ -746,7 +830,6 @@ int REDirect::rd_cone(float height, float radius, float thetamax)
     return RD_OK;
 }
 
-
 int REDirect::rd_sphere(float radius, float zmin, float zmax, float thetamax)
 {
     double theta;
@@ -847,18 +930,17 @@ int REDirect::rd_polyset(const string & vertex_type, int nvertex, const float * 
             iterate = false;
         }
     }
-    int v[size];		
+    int v[size];
+    std::cout << "size: " << size << endl;		
     for(int i = 0; i < nface; i++) 	
     {
         for (int k = 0; k < size-1; k++) 
         {
-            v[k] = face[i*(size)+k];
-            //cout << "v: " << v[k] << endl;  
+            v[k] = face[i*(size)+k];  
         }
         if ((face[i*size + (size-1)]) == -1) 
         {
             v[(size-1)] = v[0];
-            //cout << "v last: " << v[(size-1)] << endl;
         }
         for (int j = 0; j < size; j++)
         {
@@ -893,19 +975,15 @@ int REDirect::Clip(PointH p1, bool draw)
     BC1[3] = p1[3] - p1[1];
     BC1[4] = p1[2];
     BC1[5] = p1[3] - p1[2];
+    
     // Calculate Kode1
-    for (int i = 0; i < 6; i++, mask<<=1)
-    {
-        if (BC1[i] < 0) Kode1 |= mask;
-    }
+    for (int i = 0; i < 6; i++, mask<<=1) if (BC1[i] < 0) Kode1 |= mask;
     
     if (draw)
     {
-        //cout << "Kode0 & Kode1: " << (Kode0 & Kode1) << endl;
-        if ((Kode0 & Kode1) == 0)
+        if ((Kode0 & Kode1) == 0) // Else trivial reject
         {
-            //cout << "Kode0 | Kode1: " << (Kode0 | Kode1) << endl;
-            if ((Kode0 | Kode1) == 0)
+            if ((Kode0 | Kode1) == 0) // Trivial accept
             {
                 PointH p0_device = Matrix_PointH_Multiply(clip_to_device, p0);    
                 p0_device[0] = p0_device[0] / p0_device[3];
@@ -939,15 +1017,9 @@ int REDirect::Clip(PointH p1, bool draw)
                 {
                     if ((Klip & mask) != 0)
                     {
-                        double a = (BC0[i] / (BC0[i] - BC1[i]));                      
-                        if ((Kode0 & mask) != 0)
-                        {
-                            amin = max(amin, a);
-                        }
-                        else 
-                        {
-                            amax = min(amax, a);
-                        }
+                        double a = (BC0[i] / (BC0[i] - BC1[i]));                    
+                        if ((Kode0 & mask) != 0) amin = max(amin, a);
+                        else amax = min(amax, a);
                         if (amax < amin) 
                         {
                             nonTrivReject = true;
@@ -958,25 +1030,348 @@ int REDirect::Clip(PointH p1, bool draw)
                 if (!nonTrivReject)
                 {
                     PointH p_draw;
-                    for (int i = 0; i < 4; i++)
-                    {
-                        p_draw[i] = p0[i] + (amin * (p0[i] - p1[i]));
-                    }
+                    for (int i = 0; i < 4; i++) p_draw[i] = p0[i] + (amin * (p0[i] - p1[i]));
                     Clip(p_draw, false);
 
                     PointH p_draw2;
-                        for (int i = 0; i < 4; i++)
-                        {
-                            p_draw2[i] = p0[i] + (amax * (p0[i] - p1[i]));
-                        }
-                        Clip(p_draw2, true);
+                    for (int i = 0; i < 4; i++) p_draw2[i] = p0[i] + (amax * (p0[i] - p1[i]));                        
+                    Clip(p_draw2, true);
                 }                
             }
         }
-    } 
+    }
+
     point_store = p1;
     for (int i = 0; i < 6; i++) BC0[i] = BC1[i];
     Kode0 = Kode1;
 
     return RD_OK;
+}
+
+void REDirect::scan_convert(attr_point points[], int count)
+{
+    if(! buildEdgeList(points, count)) return;   // No edges cross a scanline
+
+    buildEdgeList(points, count);
+    delete[] AET;
+    AET = new Edge;
+    AET->next = NULL;
+
+    for (int scan = 0; scan < display_ySize; scan++)
+    {
+        //Take the edges starting on this scanline from the edge table
+        //and add them to the active edge table (AET).
+        addActiveList(scan, AET);
+
+        if (AET->next)
+           {
+               //fill between the edge pairs in the AET
+               fillBetweenEdges(scan, AET);
+               //update the AET
+               updateAET(scan, AET);
+               //resort the AET
+               resortAET(AET);
+           }
+        }
+}
+
+bool REDirect::buildEdgeList(attr_point attr_points[], int count)
+{
+    bool scanline_crossed = false;
+    int v1 = count - 1;  // The last vertex in the polygon
+    int v2 = 0;
+    for (v2; v2 < count; v2++)
+     { 
+        if(attr_points[v1].coord[1] != attr_points[v2].coord[1]){
+           scanline_crossed = true;
+            
+           if(attr_points[v1].coord[1]  < attr_points[v2].coord[1])
+              makeEdgeRec(attr_points[v1], attr_points[v2]);
+           else
+              makeEdgeRec(attr_points[v2], attr_points[v1]);
+        }
+        v1 = v2; // Move to next edge
+     }
+    return scanline_crossed;
+}
+
+int REDirect::makeEdgeRec(attr_point upper, attr_point lower)
+{
+    float dy = upper.coord[1] - lower.coord[1];
+
+    Edge * e = new Edge;
+
+    // Calculate the edge value increments between scan lines
+    e->inc.coord[0] = ((upper.coord[0] - lower.coord[0]) / dy);
+    e->inc.coord[1] = ((upper.coord[1] - lower.coord[1]) / dy);
+    e->inc.coord[2] = ((upper.coord[2] - lower.coord[2]) / dy);
+
+    // Edge starts on scanline ceil(lower.y)
+    float factor =  ceil(lower.coord[1]) - lower.coord[1];  // Gives the fractional position of the first scanline crossing
+
+    // Calculate the starting values for the edge
+    e->p.coord[0] = lower.coord[0] + factor * (e->inc.coord[0]);
+    e->p.coord[1] = lower.coord[1] + factor * (e->inc.coord[1]);
+    e->p.coord[2] = lower.coord[2] + factor * (e->inc.coord[2]);
+
+    // Find the last scanline for the edge
+    e->yLast = ceil(upper.coord[1]) - 1;
+
+    int index = ceil(lower.coord[1]);
+    index = abs(index);
+    insertEdge(ET[index], e);
+    return RD_OK;
+}
+
+int REDirect::addActiveList(int scan, Edge * AET)
+{
+    Edge *p, *q;
+
+    p = ET[scan]->next; // Get the edges starting on this scan line
+    while(p)
+      {
+        q = p->next;  // Hold the rest of the list
+        insertEdge(AET, p);
+        p = q;
+      }
+
+    // Keep edge table clean -- edges have been transfered
+    ET[scan]->next = 0;
+    return RD_OK;
+}
+
+int REDirect::insertEdge(Edge * list, Edge * e)
+{
+    Edge *p;
+    Edge *q = list;
+
+    // p leads
+    p = q->next;
+    int i = 0;
+    while(p != 0 && (e->p.coord[0] > p->p.coord[0]))
+    {
+        cout << "p: " << p->p.coord[0] << endl;
+        // Step to the next edge
+        q = p;
+        p = p->next;
+        i++;
+    }
+
+    // Link the edge into the list after q
+    e->next = q->next;
+    q->next = e;
+    return RD_OK;
+}
+
+int REDirect::updateAET(int scanline, Edge * AET)
+{
+    Edge *q = AET, *p = AET->next;
+    // p leads
+
+    while(p)
+    {
+        if(scanline == p->yLast)  // This is the last scanline for this edge
+        {
+            p = p->next;    // Move p along
+            deleteAfter(q);  // get rid of old node
+        }
+        else // Update the attribute values
+        {
+            for (int i = 0; i < 16; i++) p->p.coord[i] += p->inc.coord[i];            
+            q = p;
+            p = p->next;
+        }
+    }
+    return RD_OK;
+}
+
+int REDirect::deleteAfter(Edge * q)
+{
+    Edge *p = q->next;
+
+    q->next = p->next;
+    delete p;
+    return RD_OK;
+}
+
+int REDirect::resortAET(Edge * AET)
+{
+    Edge *q, *p = AET->next;
+
+    AET->next = NULL;
+    while(p)
+    {
+        q = p->next;
+        insertEdge(AET, p);
+        p = q;
+    }
+    return RD_OK;
+}
+
+int REDirect::fillBetweenEdges(int scan, Edge * AET)
+{
+    Edge * p1; 
+    Edge * p2;
+  
+    p1 = AET->next;
+
+    while (p1)
+    {
+        p2 = p1->next;  // Get the pair of edges from the AET
+        //cout << "p1.x: " << p1->p.coord[0] << endl;
+        //cout << "p2.x: " << p2->p.coord[0] << endl;
+        if(p1->p.coord[0] != p2->p.coord[0])
+        {
+            // Calculate the attribute increments along the scanline
+            float dx = p2->p.coord[0] - p1->p.coord[0];
+            p1->inc.coord[0] = (p2->p.coord[0] - p1->p.coord[0]) / dx;
+            p1->inc.coord[1] = (p2->p.coord[1] - p1->p.coord[1]) / dx;
+            p1->inc.coord[2] = (p2->p.coord[2] - p1->p.coord[2]) / dx;
+
+                // Calculate the starting values for the edge
+            float factor = ceil(p1->p.coord[0]) - p1->p.coord[0]; // Gives the fractional position
+                                        // of the first pixel crossing
+
+            attr_point value;
+            value.coord[0] = p1->p.coord[0] + factor * p1->inc.coord[0];
+            value.coord[1] = p1->p.coord[1] + factor * p1->inc.coord[1];
+            value.coord[2] = p1->p.coord[2] + factor * p1->inc.coord[1];
+
+
+            float endx = ceil(p2->p.coord[0]);
+            cout << "while" << endl;
+            while(value.coord[0] < endx)
+            {
+                //Calculate the color for the pixel and plot it.
+                //x and z come from the current values, y is the current scanline
+               PointH plot;
+               plot[0] = value.coord[0]; 		  
+               plot[1] = scan; 		  
+               plot[2] = value.coord[0];
+               cout << "plot: " << plot[0] << " " << plot[1] << " " << plot[2] << endl;           
+               point_pipeline(plot);               
+               // Increment the values 		  
+               value.coord[0] = value.coord[0] + p1->inc.coord[0]; 		  
+               value.coord[1] = value.coord[1] + p1->inc.coord[1]; 		  
+               value.coord[2] = value.coord[2] + p1->inc.coord[2];
+            }
+        }
+        p1 = p2->next;
+    }
+    return RD_OK;
+}
+
+int REDirect::poly_clip(int points, attr_point in[], attr_point out[])
+{
+    attr_point first[6] = {NULL};
+    attr_point last[6] = {NULL};
+    bool flags[6] = {false};
+    int count = 0;
+
+    for(int i =0;i< points;i++) count += clipPoint(in[i], out, 0, first, last, flags, count);
+
+    return count;  
+}
+
+int REDirect::clipPoint(attr_point p, attr_point out[], int b, attr_point first[], attr_point last[], bool flags[], int count)
+{
+     if (!flags[b])
+        {
+            first->coord[b] = p.coord[b];
+            last->coord[b] = p.coord[b];
+            flags[b] = true;
+        }
+        else
+        {
+            if (cross(p, last[b], b))
+            {
+                attr_point ipt = intersect(p, last[b], b);
+                if (b < 6) count += clipPoint(ipt, out, b+1, first, last, flags, count);
+                else out[count++] = ipt; 
+            }
+        }
+        last[b] = p;
+
+        if (inside(p, b))
+        {
+            if (b < 6) count += clipPoint(p, out, b+1, first, last, flags, count);
+            else out[count++] = p; 
+        }
+
+    return count;
+}
+
+int REDirect::clipLastPoint(attr_point p, attr_point out[], int b, attr_point first[], attr_point last[], bool flags[], int count)
+{
+    for (int i = 0; i < 6; i++)
+    {
+        if (first[b].coord[0] != NULL & first[b].coord[1] != NULL && first[b].coord[2] != NULL && cross(first[b], last[b], b))
+        {
+            attr_point ipt = intersect(last[b], first[b], b);
+            if (b < 6) count += clipPoint(ipt, out, b+1, first, last, flags, count);
+            else out[count++] = ipt;
+        }
+    }
+    return count;
+}
+
+attr_point intersect(attr_point p1, attr_point p2, int b)
+{
+    float a;
+    double BC0[6];
+    attr_point p;
+    BC0[0] = p1.coord[0];
+    BC0[1] = p1.coord[3] - p1.coord[0];
+    BC0[2] = p1.coord[1];
+    BC0[3] = p1.coord[3] - p1.coord[1];
+    BC0[4] = p1.coord[2];
+    BC0[5] = p1.coord[3] - p1.coord[2];
+    double BC1[6];
+    BC1[0] = p2.coord[0];
+    BC1[1] = p2.coord[3] - p2.coord[0];
+    BC1[2] = p2.coord[1];
+    BC1[3] = p2.coord[3] - p2.coord[1];
+    BC1[4] = p2.coord[2];
+    BC1[5] = p2.coord[3] - p2.coord[2];
+    a = BC0[b] / (BC0[b]- BC1[b]);
+    for (int i = 0; i < 16; i++) p.coord[i] = p1.coord[i] + a * (p2.coord[i] - p1.coord[i]);
+    return p;
+}
+
+bool inside(attr_point p, int b)
+{
+    BC0[0] = p.coord[0];
+    BC0[1] = p.coord[3] - p.coord[0];
+    BC0[2] = p.coord[1];
+    BC0[3] = p.coord[3] - p.coord[1];
+    BC0[4] = p.coord[2];
+    BC0[5] = p.coord[3] - p.coord[2];
+    for (int i = 0; i < 6; i++)
+    {
+        if (b == i)
+        {
+            if (b % 2 == 0)
+            {
+                if (BC0[i] > 0) return true;
+                else return false;
+            }
+            else 
+            {
+                if (BC0[i] < 1) return true;
+                else return false;
+            }
+        }
+    }
+}
+
+bool cross(attr_point p1, attr_point p2, int b)
+{
+    bool cross = false;
+    if (p1.coord[0] < 0 && p2.coord[0] > 0 || p1.coord[0] > 0 && p2.coord[0] < 0) cross = true;
+    if (p1.coord[3] - p1.coord[0] < 0 && p2.coord[3] - p2.coord[0] > 0 || p1.coord[3] - p1.coord[0] > 0 && p2.coord[3] - p2.coord[0] < 0) cross = true;
+    if (p1.coord[1] < 0 && p2.coord[1] > 0 || p1.coord[1] > 0 && p2.coord[1] < 0) cross = true;
+    if (p1.coord[3] - p1.coord[1] < 0 && p2.coord[3] - p2.coord[1] > 0 || p1.coord[3] - p1.coord[1] > 0 && p2.coord[3] - p2.coord[1] < 0) cross = true;
+    if (p1.coord[2] < 0 && p2.coord[2] > 0 || p1.coord[2] > 0 && p2.coord[2] < 0) cross = true;
+    if (p1.coord[3] - p1.coord[2] < 0 && p2.coord[3] - p2.coord[2] > 0 || p1.coord[3] - p1.coord[2] > 0 && p2.coord[3] - p2.coord[2] < 0) cross = true;
+    return cross;
 }
